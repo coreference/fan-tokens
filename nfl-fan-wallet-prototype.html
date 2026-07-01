@@ -1,0 +1,1841 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NFL Fan Wallet — Clickable Prototype</title>
+<style>
+/* ============================ DESIGN TOKENS ============================ */
+:root{
+  /* studio (outside phone) */
+  --studio:#EEF0F3; --studio2:#E3E6EB; --paper:#FFFFFF; --ink:#10141A; --ink2:#3A424E; --hint:#727B88;
+  --rule:#D7DBE1; --story:#FFF6E0; --story-bd:#E9C977; --ok:#1F9D55; --warn:#E2543B; --pend:#C58A1A;
+  /* spacing / radius / shadow / type */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px; --s6:32px;
+  --r1:10px; --r2:14px; --r3:20px; --r4:28px;
+  --sh1:0 1px 2px rgba(16,20,26,.08); --sh2:0 8px 30px rgba(16,20,26,.12); --sh3:0 24px 60px rgba(16,20,26,.20);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --display:"Arial Black","Helvetica Neue",Impact,var(--font);
+}
+/* phone skin variables (default = LEAGUE / neutral) */
+.phone{
+  --bg:#0B0E12; --surf:#15191F; --surf2:#1C222B; --line:#262E38; --txt:#F4F6F8; --muted:#8A929C;
+  --accent:#C8A24B; --accent2:#E9C977; --aink:#0B0E12; --grad1:#1C222B; --grad2:#0B0E12;
+}
+.phone[data-skin="panthers"]{
+  --accent:#0085CA; --accent2:#00A3E0; --aink:#FFFFFF; --grad1:#0085CA; --grad2:#06121C; --surf2:#101B26;
+}
+.phone[data-skin="dolphins"]{
+  --accent:#008E97; --accent2:#00C2CC; --aink:#FFFFFF; --grad1:#008E97; --grad2:#04181A; --surf2:#0C1F21;
+}
+.phone[data-skin="boost"]{ --accent:#FF6A00; --accent2:#FF8A3D; --aink:#0B0E12; }
+/* Task 1 — pilot-team skins (color hierarchy → dark canvas: accent=interactive, primary=hero gradient) */
+.phone[data-skin="patriots"]{
+  --accent:#C60C30; --accent2:#E8314E; --aink:#FFFFFF; --grad1:#002244; --grad2:#00101d; --surf2:#0c1a2a;
+}
+.phone[data-skin="eagles"]{
+  --accent:#006B75; --accent2:#1FA6B0; --aink:#FFFFFF; --grad1:#004C54; --grad2:#00191c; --surf2:#0a2227;
+}
+.phone[data-skin="niners"]{
+  --accent:#AA0000; --accent2:#B3995D; --aink:#FFFFFF; --grad1:#AA0000; --grad2:#1a0202; --surf2:#1f0a0a;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+
+/* ============================ STUDIO LAYOUT ============================ */
+.topbar{padding:22px 30px 14px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;border-bottom:1px solid var(--rule)}
+.brandline{font-size:11px;letter-spacing:.22em;color:var(--hint);font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.headline{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.04;letter-spacing:-.01em;text-transform:uppercase;max-width:560px}
+.sub{font-size:13px;color:var(--ink2);max-width:560px;margin-top:8px;line-height:1.5}
+.skinlegend{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--sh1);min-width:230px}
+.skinlegend .lt{font-size:10px;letter-spacing:.18em;color:var(--hint);font-weight:700;text-transform:uppercase;margin-bottom:8px}
+.swatches{display:flex;gap:8px}
+.swatch{flex:1;border-radius:10px;height:34px;display:flex;align-items:flex-end;padding:5px 7px;font-size:9px;font-weight:700;color:#fff;letter-spacing:.04em}
+.swatch.sl{background:linear-gradient(135deg,#1C222B,#0B0E12);border:1px solid #C8A24B;color:#E9C977}
+.swatch.sp{background:linear-gradient(135deg,#0085CA,#06121C)}
+.swatch.sd{background:linear-gradient(135deg,#008E97,#04181A)}
+
+/* flow rail */
+.rail{display:flex;gap:8px;overflow-x:auto;padding:14px 30px;border-bottom:1px solid var(--rule);background:var(--paper)}
+.chip{flex:0 0 auto;border:1px solid var(--rule);background:var(--studio);color:var(--ink2);border-radius:999px;
+  padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:.12s}
+.chip:hover{border-color:#B9C0C9}
+.chip .n{font-size:10px;color:var(--hint);font-variant-numeric:tabular-nums}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chip.active .n{color:#A8B0BC}
+
+/* stage : prev | phone | panel */
+.stage{display:grid;grid-template-columns:300px 430px 1fr;gap:26px;align-items:start;padding:28px 30px;max-width:1400px;margin:0 auto}
+@media(max-width:1180px){.stage{grid-template-columns:1fr;justify-items:center}.panel{max-width:430px}}
+.prevwrap{position:relative;justify-self:end;width:100%;display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.prevlabel{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--hint);font-weight:700}
+.prevscale{transform:scale(.74);transform-origin:top right;filter:saturate(.7);opacity:.5;pointer-events:none;user-select:none}
+.prevscale .phone{box-shadow:var(--sh1)}
+.prevempty{font-size:12px;color:var(--hint);background:var(--paper);border:1px dashed var(--rule);border-radius:var(--r2);padding:20px;text-align:center;width:200px}
+
+/* ============================ PHONE FRAME ============================ */
+.phone{width:390px;height:800px;background:var(--bg);border-radius:46px;border:11px solid #05070A;box-shadow:var(--sh3);
+  position:relative;overflow:hidden;color:var(--txt);display:flex;flex-direction:column}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:#05070A;border-radius:0 0 16px 16px;z-index:40}
+.statusbar{height:46px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 28px;font-size:14px;font-weight:600;z-index:30}
+.statusbar .dots{display:flex;align-items:center;gap:6px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:11px}
+.bars i{width:3px;background:currentColor;border-radius:1px}
+.batt{width:23px;height:12px;border:1.4px solid currentColor;border-radius:3px;padding:1.5px;opacity:.95}
+.batt i{display:block;height:100%;width:75%;background:currentColor;border-radius:1px}
+
+.apphead{flex:0 0 auto;padding:6px 20px 12px;display:flex;align-items:center;gap:12px;min-height:46px}
+.apphead .ht{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.01em;text-transform:uppercase;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:34px;height:34px;border-radius:10px;background:var(--surf);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--line)}
+.teambadge{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.01em;text-transform:uppercase;color:var(--txt);min-width:0}
+.teambadge span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.teamsq{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:10px;letter-spacing:.01em;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+
+.screen{flex:1;overflow-y:auto;padding:6px 20px 24px;scrollbar-width:none}
+.screen::-webkit-scrollbar{display:none}
+
+/* phone components */
+.h1{font-family:var(--display);font-weight:800;font-size:25px;line-height:1.08;text-transform:uppercase;letter-spacing:.005em;margin:8px 0 6px}
+.h2{font-weight:800;font-size:18px;margin:4px 0}
+.p{color:var(--muted);font-size:13.5px;line-height:1.5;margin:6px 0}
+.eyebrow{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent2);font-weight:800;margin-top:4px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r3);padding:16px;margin:12px 0}
+.card.tint{background:linear-gradient(160deg,var(--surf2),var(--surf))}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--muted)} .small{font-size:12px} .tnum{font-variant-numeric:tabular-nums}
+.btn{width:100%;border:none;border-radius:16px;padding:16px;font-weight:800;font-size:15.5px;cursor:pointer;font-family:var(--font);
+  background:var(--accent);color:var(--aink);letter-spacing:.01em;display:flex;align-items:center;justify-content:center;gap:8px;transition:.12s}
+.btn:hover{filter:brightness(1.06)} .btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.4;cursor:not-allowed;filter:none}
+.btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+.btn.soft{background:var(--surf2);color:var(--txt);border:1px solid var(--line)}
+.btn.boost{background:#FF6A00;color:#0B0E12}
+.btn.sm{padding:11px;font-size:13px;border-radius:12px}
+.stack>*+*{margin-top:10px}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.qchip{flex:1;min-width:60px;text-align:center;border:1px solid var(--line);background:var(--surf);border-radius:12px;padding:11px 6px;font-weight:800;cursor:pointer;font-size:14px}
+.qchip.on{background:var(--accent);color:var(--aink);border-color:var(--accent)}
+.medallion{width:96px;height:96px;border-radius:50%;margin:8px auto;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,var(--accent2),var(--accent));color:var(--aink);font-weight:900;font-size:30px;
+  box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 2px 6px rgba(255,255,255,.4);border:3px solid rgba(255,255,255,.18)}
+.stepper{display:flex;align-items:center;justify-content:center;gap:18px;margin:14px 0}
+.stepper button{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:var(--surf);color:var(--txt);font-size:22px;font-weight:700;cursor:pointer}
+.stepper .val{font-family:var(--display);font-size:44px;font-weight:800;min-width:120px;text-align:center;letter-spacing:.02em}
+.field{margin:12px 0}
+.field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;display:block;margin-bottom:6px}
+.field input{width:100%;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 14px;color:var(--txt);font-size:15px;font-family:var(--font)}
+.field input:focus{outline:none;border-color:var(--accent)}
+.field.err input{border-color:var(--warn)}
+.errmsg{color:#ff8b78;font-size:12px;margin-top:6px;display:flex;gap:6px;align-items:center}
+.otpgrid{display:flex;gap:10px;justify-content:center;margin:18px 0}
+.otpgrid input{width:54px;height:62px;text-align:center;font-size:26px;font-weight:800;background:var(--surf);border:1px solid var(--line);border-radius:14px;color:var(--txt)}
+.otpgrid input:focus{outline:none;border-color:var(--accent)}
+.otpgrid.err input{border-color:var(--warn)}
+.progress{height:9px;border-radius:99px;background:var(--surf2);overflow:hidden;margin:8px 0}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;padding:5px 10px;border-radius:999px;letter-spacing:.02em}
+.pill.gold{background:color-mix(in srgb, var(--accent) 16%, transparent);color:var(--accent2)}
+.pill.ok{background:rgba(31,157,85,.18);color:#52d18a}
+.pill.warn{background:rgba(226,84,59,.18);color:#ff8b78}
+.pill.pend{background:rgba(197,138,26,.2);color:#e7b85a}
+.pill.boost{background:rgba(255,106,0,.2);color:#ff944d}
+.listrow{display:flex;align-items:center;gap:12px;padding:14px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.listrow:last-child{border-bottom:none}
+.listrow .ic{width:40px;height:40px;border-radius:12px;background:var(--surf2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--accent2)}
+.listrow .gr{flex:1;min-width:0}
+.listrow .t{font-weight:700;font-size:14px} .listrow .d{font-size:12px;color:var(--muted)}
+.locked{opacity:.55}
+.tier-ladder{display:flex;gap:6px;margin:10px 0}
+.tier-ladder div{flex:1;text-align:center;font-size:10px;font-weight:800;padding:8px 2px;border-radius:8px;background:var(--surf2);color:var(--muted)}
+.tier-ladder div.cur{background:var(--accent);color:var(--aink)}
+.alloc-team{display:flex;align-items:center;gap:10px;margin:14px 0}
+.alloc-team .lg{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:13px}
+.alloc-team input[type=range]{flex:1;accent-color:var(--accent)}
+.alloc-pct{width:50px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.skinflash{position:absolute;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;
+  background:radial-gradient(circle at 50% 35%,var(--grad1),var(--grad2));animation:flash .5s ease}
+@keyframes flash{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
+.bignum{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em}
+
+/* sticky CTA footer — pinned to the bottom of the phone, outside the scrolling .screen */
+.ctafooter{flex:0 0 auto;padding:14px 20px 18px;border-top:1px solid var(--line);background:var(--bg)}
+
+/* tab bar */
+.tabbar{flex:0 0 auto;display:flex;border-top:1px solid var(--line);background:var(--surf);padding:8px 6px 18px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;color:var(--muted);cursor:pointer;font-weight:700}
+.tab.on{color:var(--accent2)} .tab svg{width:22px;height:22px}
+
+/* overlays inside phone */
+.sheet-scrim{position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:70;display:flex;align-items:flex-end}
+.sheet{width:100%;background:var(--surf);border-radius:24px 24px 0 0;padding:20px 20px 26px;border-top:1px solid var(--line);animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet .grab{width:40px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
+.modal-scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:75;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:22px;width:100%}
+.applepay{background:#000;color:#fff}
+.toasts{position:absolute;left:0;right:0;bottom:96px;z-index:90;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{background:#10141A;border:1px solid #2A323C;color:#fff;padding:11px 16px;border-radius:999px;font-size:13px;font-weight:700;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);animation:up .2s ease;display:flex;gap:8px;align-items:center}
+.toast.ok{border-color:rgba(82,209,138,.5)} .toast.warn{border-color:rgba(255,139,120,.5)}
+
+/* ============================ ANNOTATION PANEL ============================ */
+.panel{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r3);box-shadow:var(--sh2);padding:24px;align-self:start}
+.panel .stepid{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--hint);font-weight:800}
+.panel h2{font-family:var(--display);font-weight:800;font-size:23px;text-transform:uppercase;letter-spacing:-.005em;margin:6px 0 2px;line-height:1.08}
+.panel .skinrow{display:flex;gap:8px;margin:10px 0 2px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:7px;text-transform:uppercase}
+.tag.skin{background:var(--ink);color:#fff}
+.tag.phase{background:var(--studio2);color:var(--ink2)}
+.story{background:var(--story);border:1px solid var(--story-bd);border-radius:12px;padding:13px 14px;margin:16px 0}
+.story .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:#9a7b1e;margin-bottom:5px}
+.story p{margin:0;font-size:13.5px;line-height:1.5;color:#5c4a14;font-weight:600}
+.acc .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--hint);margin:18px 0 8px}
+.acc ul{list-style:none;margin:0;padding:0}
+.acc li{display:flex;gap:9px;font-size:13px;line-height:1.45;color:var(--ink2);padding:5px 0;align-items:flex-start}
+.acc li .ck{color:var(--ok);font-weight:800;flex-shrink:0;margin-top:1px}
+.metablock{margin-top:16px;border-top:1px solid var(--rule);padding-top:14px;display:grid;grid-template-columns:74px 1fr;gap:6px 12px;font-size:12.5px}
+.metablock dt{color:var(--hint);font-weight:700;text-transform:uppercase;font-size:10px;letter-spacing:.08em;padding-top:2px}
+.metablock dd{margin:0;color:var(--ink2)}
+.metablock dd .k{display:inline-block;background:var(--studio);border:1px solid var(--rule);border-radius:6px;padding:2px 7px;font-weight:700;font-size:11px;margin:0 4px 4px 0}
+.engnote{margin-top:14px;font-size:12px;color:var(--hint);font-style:italic;line-height:1.5;border-left:3px solid var(--story-bd);padding-left:10px}
+.varbox{margin-top:16px;border-top:1px solid var(--rule);padding-top:14px}
+.varbox .lab{font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--warn);margin-bottom:8px}
+.varbtns{display:flex;flex-wrap:wrap;gap:7px}
+.varbtns button{font-size:11.5px;font-weight:700;border:1px solid var(--rule);background:var(--studio);color:var(--ink2);
+  border-radius:8px;padding:7px 11px;cursor:pointer}
+.varbtns button:hover{border-color:var(--warn);color:var(--warn)}
+.varbtns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.varbtns button.on:hover{border-color:var(--ink);color:#fff}
+.navrow{display:flex;gap:8px;margin-top:16px}
+.navrow button{flex:1;border:1px solid var(--rule);background:var(--paper);border-radius:10px;padding:10px;font-weight:700;font-size:12.5px;cursor:pointer;color:var(--ink2)}
+.navrow button:hover{background:var(--studio)} .navrow button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.navrow button[disabled]{opacity:.35;cursor:default}
+
+/* coverage */
+.coverage{max-width:1340px;margin:8px auto 60px;padding:0 30px}
+.cov-toggle{width:100%;text-align:left;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r2);padding:16px 18px;
+  font-weight:800;font-size:14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh1)}
+.cov-body{display:none;background:var(--paper);border:1px solid var(--rule);border-top:none;border-radius:0 0 var(--r2) var(--r2);padding:6px 18px 18px}
+.cov-body.open{display:block}
+.cov-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:12px}
+.cov-col h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin:6px 0 8px;display:flex;align-items:center;gap:7px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.d-conf{background:#9aa3ad}.d-assm{background:#E9C977}.d-need{background:#E2543B}.d-excl{background:#E59ABF}
+.cov-col ul{list-style:none;margin:0;padding:0}
+.cov-col li{font-size:12px;color:var(--ink2);padding:5px 0;border-bottom:1px solid var(--rule);line-height:1.4}
+.cov-col li small{color:var(--hint)}
+.legendrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--hint)}
+.legendrow span{display:flex;align-items:center;gap:6px}
+
+/* ============================ TASK 3 — MANUAL SKIN TOGGLE ============================ */
+.skintoggle{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:2px 0 8px}
+.skinbtn{border:1px solid var(--rule);background:var(--studio);border-radius:9px;padding:7px 6px;cursor:pointer;display:flex;
+  align-items:center;gap:7px;font-size:11px;font-weight:800;color:var(--ink2);letter-spacing:.02em;transition:.12s;text-align:left}
+.skinbtn:hover{border-color:#B9C0C9}
+.skinbtn .dotc{width:13px;height:13px;border-radius:4px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.skinbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.skinbtn.on .dotc{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
+.activeteam-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;
+  border-top:1px solid var(--rule);padding-top:8px}
+.activeteam-row .lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--hint);font-weight:800}
+.activeteam-row .val{font-size:12px;font-weight:800;color:var(--ink)}
+
+/* ============================ TASK 2 — SCENARIO SELECTOR (SCREEN 0) ============================ */
+.scenariohub{max-width:1340px;margin:18px auto 4px;padding:0 30px}
+.scenhub-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.scenhub-head h2{font-family:var(--display);font-weight:800;font-size:24px;text-transform:uppercase;letter-spacing:-.01em;margin:0}
+.scenhub-head .sh-sub{font-size:12.5px;color:var(--ink2);margin-top:6px;max-width:560px;line-height:1.5}
+.scenhub-team{background:var(--paper);border:1px solid var(--rule);border-radius:999px;padding:8px 14px;font-size:11px;font-weight:800;
+  color:var(--ink2);display:flex;align-items:center;gap:8px;box-shadow:var(--sh1);white-space:nowrap}
+.scenhub-team .dotc{width:12px;height:12px;border-radius:4px}
+.layergrid{display:flex;flex-direction:column;gap:16px}
+.layercard{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r3);box-shadow:var(--sh2);padding:18px;display:flex;flex-direction:column}
+.layercard .lc-tag{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--hint);font-weight:800}
+.layercard .lc-title{font-family:var(--display);font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:-.005em;margin:5px 0 2px;line-height:1.1}
+.lc-now{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--accent2);background:rgba(200,162,75,.14);
+  color:#9a7b1e;border-radius:6px;padding:3px 7px;display:inline-block;margin:6px 0 2px}
+/* horizontal layer body: scenarios list left, core idea + best-for + target-users right */
+.lc-body{display:grid;grid-template-columns:240px 1fr;gap:24px;margin-top:12px}
+@media(max-width:760px){.lc-body{grid-template-columns:1fr}}
+.lc-scenarios{display:flex;flex-direction:column;min-width:0}
+.lc-fields{margin:0;display:flex;flex-direction:column;gap:9px;min-width:0;border-left:1px solid var(--rule);padding-left:22px}
+@media(max-width:760px){.lc-fields{border-left:none;padding-left:0;border-top:1px solid var(--rule);padding-top:12px}}
+.lc-field .fl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--hint);margin-bottom:3px}
+.lc-field .fv{font-size:12.5px;line-height:1.45;color:var(--ink2)}
+.lc-scenlab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--hint);margin-bottom:8px}
+.scenbtns{display:flex;flex-direction:column;gap:7px;margin-top:0}
+.scenbtn{border:1px solid var(--rule);background:var(--studio);border-radius:10px;padding:10px 12px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;font-size:12.5px;font-weight:700;color:var(--ink);transition:.12s;text-align:left;width:100%}
+.scenbtn:hover{border-color:var(--ink);background:#fff;box-shadow:var(--sh1)}
+.scenbtn .sn{font-size:10px;font-weight:800;color:var(--hint);font-variant-numeric:tabular-nums;flex:0 0 auto;
+  width:22px;height:22px;border-radius:6px;background:var(--paper);border:1px solid var(--rule);display:flex;align-items:center;justify-content:center}
+.scenbtn .sl{flex:1;min-width:0}
+.scenbtn .sr{font-size:10px;font-weight:800;color:var(--hint);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.scenbtn:hover .sr{color:var(--ink2)}
+.scenbtn[data-team="1"] .sn{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* phone-off shell (Screen 0 — phone not yet booted) */
+.phoneoff{width:390px;height:800px;border-radius:46px;border:11px solid #05070A;background:linear-gradient(180deg,#10141A,#05070A);
+  box-shadow:var(--sh3);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#6b7480;gap:10px;position:relative}
+.phoneoff .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:140px;height:26px;background:#05070A;border-radius:0 0 16px 16px}
+.phoneoff .po-ico{width:46px;height:46px;border-radius:50%;border:2px solid #2a323c;display:flex;align-items:center;justify-content:center;font-size:20px;color:#3a424e}
+.phoneoff .po-t{font-size:13px;font-weight:800;letter-spacing:.04em;color:#8a929c}
+.phoneoff .po-s{font-size:11px;color:#5a626e;max-width:200px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <div class="brandline">NFL Fan Wallet · Engineering Walkthrough · Clickable Prototype</div>
+    <h1 class="headline">Buy a token.<br>Pledge to your team.<br>Earn points all season.</h1>
+    <p class="sub">Tap through the live phone frame. The panel on the right documents each screen; the faded frame on the left is the previous step in the flow. Flow chips above jump to the first screen of each journey. Edge &amp; fallback states are reachable from the panel.</p>
+  </div>
+  <div class="skinlegend">
+    <div class="lt">The skin system · manual override</div>
+    <div class="skintoggle" id="skintoggle"></div>
+    <div class="activeteam-row"><span class="lbl">Active skin</span><span class="val" id="activeteam">Neutral League</span></div>
+    <p style="font-size:11px;color:var(--hint);margin:9px 0 0;line-height:1.4">App opens neutral. Pledging tokens — or this toggle — swaps the team skin app-wide.</p>
+  </div>
+</header>
+
+<nav class="rail" id="rail"></nav>
+
+<section class="scenariohub" id="scenhub" style="display:none"></section>
+
+<main class="stage">
+  <div class="prevwrap"><div class="prevlabel">◀ Previous step</div><div id="prev"></div></div>
+  <div id="phone"></div>
+  <aside class="panel" id="panel"></aside>
+</main>
+
+<section class="coverage">
+  <button class="cov-toggle" onclick="document.getElementById('covbody').classList.toggle('open')">
+    Coverage / Assumptions Checklist <span style="color:var(--hint);font-weight:700;font-size:12px">tap to expand ▾</span>
+  </button>
+  <div class="cov-body" id="covbody">
+    <div class="legendrow">
+      <span><i class="dot d-conf"></i> Confirmed — in source</span>
+      <span><i class="dot d-assm"></i> Assumption — needed for coherence</span>
+      <span><i class="dot d-need"></i> Needs input — client decision</span>
+      <span><i class="dot d-excl"></i> Excluded — deprioritised in source</span>
+    </div>
+    <div class="cov-grid" id="covgrid"></div>
+  </div>
+</section>
+
+<script>
+/* ====================================================================== */
+/*  GLOBAL STATE  (hardcoded mock data — §2 data model)                   */
+/* ====================================================================== */
+var state = {
+  screen:"scenario0", history:[], skin:"league", onboarded:false,
+  wallet:{ balance:0, unpledged:0, pledged:0, price:1 },
+  points:{ available:0, lifetime:0, tier:"Bronze", next:"Silver", prog:0.62, voting:false },
+  qty:50, pay:"applePay", pledgePct:100,
+  team:null, primaryTeam:null, source:null,
+  alloc:{ panthers:100, dolphins:0 },
+  boost:{ active:false, expired:false, mult:"3×" },
+  raffleEntries:1,
+  ticketMode:null,
+  vote:null,
+  // acquisition / onboarding (Task 1)
+  acqTeam:"carolina-panthers", acqScenario:"A1", pack:25,
+  // scenario selector + manual skin (Task 2 / Task 3)
+  acqLayer:"L1", activeScenarioId:null, manualSkin:false,
+  reward:{ name:"Team reward (placeholder)", value:"$25", window:"Valid today · game day", perFan:true, claimed:false, expired:false },
+  // edge flags
+  e:{ reg:false, otp:false, otpResend:false, pay:false, loc:false, ambiguous:false,
+      unsupported:false, noTeam:false, raffleInsuf:false, ticketInsuf:false, combine:false,
+      voteLocked:false, alloc:false, saveErr:false, unpledged:false,
+      rwExpired:false, rwClaimed:false, boostPair:false, locCtx:false, acqDecline:false, apUnavail:false }
+};
+
+var TEAMS = {
+  "carolina-panthers":{name:"Carolina Panthers",abbr:"CAR",c:"#0085CA"},
+  "miami-dolphins":{name:"Miami Dolphins",abbr:"MIA",c:"#008E97"},
+  "atlanta-falcons":{name:"Atlanta Falcons",abbr:"ATL",c:"#A71930"},
+  "new-orleans-saints":{name:"New Orleans Saints",abbr:"NO",c:"#D3BC8D"},
+  "philadelphia-eagles":{name:"Philadelphia Eagles",abbr:"PHI",c:"#004C54"},
+  "san-francisco-49ers":{name:"San Francisco 49ers",abbr:"SF",c:"#AA0000"},
+  "new-england-patriots":{name:"New England Patriots",abbr:"NE",c:"#002244"}
+};
+/* Task 1 — acquisition skin + pack config */
+var SKIN_OF={"carolina-panthers":"panthers","miami-dolphins":"dolphins","philadelphia-eagles":"eagles","san-francisco-49ers":"niners","new-england-patriots":"patriots"};
+function teamSkin(id){return SKIN_OF[id]||"league";}
+var PACKS=[[10,"Starter"],[25,"Most popular"],[50,"Superfan"]];
+
+/* dynamic team binding — single source of truth for "which team is active right now",
+   driven by the active skin (onboarding pledge or manual sidebar override) */
+function currentTeamId(){ return (typeof SKIN_TEAM!=="undefined" && SKIN_TEAM[state.skin]) || state.primaryTeam || state.team || state.acqTeam || "carolina-panthers"; }
+function teamSq(teamId){ var t=TEAMS[teamId]||TEAMS["carolina-panthers"]; return '<div class="teamsq" style="background:'+t.c+'">'+t.abbr+'</div>'; }
+function teamHeaderFull(teamId){ var t=TEAMS[teamId]||TEAMS["carolina-panthers"]; return '<div class="teambadge">'+teamSq(teamId)+'<span>'+t.name.toUpperCase()+'</span></div>'; }
+/* right-aligned variant: when the team name sits on the right of a header, the rounded
+   square icon follows the name (name then square) rather than leading it */
+function teamHeaderRight(teamId){ var t=TEAMS[teamId]||TEAMS["carolina-panthers"]; return '<div class="teambadge">'+'<span>'+t.name.toUpperCase()+'</span>'+teamSq(teamId)+'</div>'; }
+
+/* small single-path icons (lightweight, Figma-safe) */
+var I = {
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  bolt:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>',
+  gift:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M12 8v13M12 8a3 3 0 1 0-3-3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 1 0-3 3z"/></svg>',
+  slid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.4"/><circle cx="8" cy="17" r="2.4"/></svg>',
+  list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>',
+  chev:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg>',
+  loc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6 6 .8-4.5 4.2 1.2 6L12 16l-5.7 3 1.2-6L3 8.8 9 8z"/></svg>'
+};
+
+/* ====================================================================== */
+/*  REUSABLE PHONE COMPONENTS                                              */
+/* ====================================================================== */
+function statusBar(){
+  return '<div class="statusbar"><span class="tnum">9:41</span>'+
+    '<span class="dots"><span class="bars"><i style="height:5px"></i><i style="height:7px"></i><i style="height:9px"></i><i style="height:11px"></i></span>'+
+    '<span style="font-size:11px;font-weight:800">5G</span><span class="batt"><i></i></span></span></div>';
+}
+function head(title, opts){
+  opts=opts||{};
+  var back = opts.back ? '<div class="iconbtn" onclick="back()">'+I.back+'</div>' : '';
+  /* unified team header rule: a page title already labels the screen, so the team only
+     needs the small initials square; with no title, the square carries the full team name */
+  var badge = opts.team ? (title ? teamSq(opts.team) : teamHeaderRight(opts.team)) : '';
+  if(opts.bare) return '';
+  if(!title && !back && !badge) return '';
+  return '<div class="apphead">'+back+'<div class="ht">'+(title||'')+'</div>'+badge+'</div>';
+}
+function btn(label, on, kind){ return '<button class="btn '+(kind||'')+'" onclick="'+on+'">'+label+'</button>'; }
+function tabbar(active){
+  /* x = [activeKey, label, icon, routeTarget] — Home tab anchors to the points dashboard */
+  var t=[['home','Home',I.home,'dashboard'],['quests','Quests',I.bolt,'quests'],['raffle','Rewards',I.gift,'raffle'],['manage','Manage',I.slid,'manage'],['activity','Activity',I.list,'activity']];
+  return '<div class="tabbar">'+t.map(function(x){
+    return '<div class="tab '+(x[0]===active?'on':'')+'" onclick="go(\''+x[3]+'\')">'+x[2]+'<span>'+x[1]+'</span></div>';
+  }).join('')+'</div>';
+}
+function pill(txt,kind){ return '<span class="pill '+(kind||'gold')+'">'+txt+'</span>'; }
+
+/* overlay + toast helpers */
+function openSheet(html){ document.getElementById('overlay').innerHTML='<div class="sheet-scrim" onclick="if(event.target===this)closeOverlay()"><div class="sheet"><div class="grab"></div>'+html+'</div></div>'; }
+function openModal(html){ document.getElementById('overlay').innerHTML='<div class="modal-scrim"><div class="modal">'+html+'</div></div>'; }
+function closeOverlay(){ document.getElementById('overlay').innerHTML=''; }
+function toast(msg,kind){
+  var c=document.getElementById('toasts'); if(!c)return;
+  var el=document.createElement('div'); el.className='toast '+(kind||'ok'); el.innerHTML=(kind==='warn'?'⚠ ':'✓ ')+msg;
+  c.appendChild(el); setTimeout(function(){ el.style.opacity=0; setTimeout(function(){el.remove();},250); },2200);
+}
+
+/* ====================================================================== */
+/*  SCREENS  — each: flow, phase, step, skin, story, ac[], eng, ctas,     */
+/*  variants[], head(), body()                                            */
+/* ====================================================================== */
+var S = {};
+
+/* ---------- ONBOARDING ---------- */
+S.splash = {
+  flow:"onboarding", phase:"Entry", step:"01 · Download & Splash", id:"3.1",
+  title:"Download & open the app", hideTitle:true, skinTag:"League",
+  story:"As an NFL fan, I want to download and open the wallet, so I can start buying tokens and earning rewards with my team.",
+  ac:["Splash shows app branding and a single primary action to create an account.","Returning users jump straight to sign-in.","No wallet or team data exists yet — the app opens in the neutral League skin."],
+  eng:"League (neutral) skin is the default until the user completes a pledge. Token price is fixed at $1.",
+  ctas:["Create account → Profile","I already have an account → Sign-in"],
+  prev:"Cold launch (no session)", next:"3.2 / 3.5",
+  variants:[["Returning · valid session","go('signin')"],["Invited via referral","ev('refbanner')"],["Offline launch","ev('offline')"]],
+  bodyHead:function(){ return ''; },
+  body:function(){
+    return '<div style="text-align:center;padding-top:90px">'+
+      '<div class="medallion">$1</div>'+
+      '<div class="h1" style="font-size:34px;margin-top:18px">NFL<br>WALLET</div>'+
+      '<p class="p" style="max-width:240px;margin:10px auto 30px">Buy a token. Pledge to your team. Earn points all season.</p>'+
+      btn('Create account',"go('profile')")+
+      '<div style="height:10px"></div>'+
+      btn('I already have an account',"go('signin')","ghost")+
+      '<p class="small muted" style="margin-top:24px">$1.00 per token</p></div>';
+  }
+};
+S.profile = {
+  flow:"onboarding", phase:"Registration", step:"02 · Profile Registration", id:"3.2",
+  title:"Register a profile", hideTitle:true, skinTag:"League",
+  story:"As a new user, I want to register with my name, email and phone, so I have a secure profile and wallet.",
+  ac:["Name, email and phone are required; email and phone formats are validated.","Phone is confirmed via a one-time code before continuing.","A wallet is provisioned on success; duplicate email/phone is rejected."],
+  eng:"Wallet creation is invisible to the fan — no crypto / seed-phrase language ever surfaces.",
+  ctas:["Verify phone / Continue → OTP","(duplicate) Sign in → Sign-in"],
+  prev:"3.1 Splash", next:"3.3 OTP",
+  variants:[["Empty / invalid fields","ev('reg')"],["Duplicate account","ev('dup')"]],
+  body:function(){
+    var e=state.e.reg;
+    function f(id,label,type,ph,bad){ return '<div class="field '+(bad?'err':'')+'"><label>'+label+'</label>'+
+      '<input id="'+id+'" type="'+type+'" placeholder="'+ph+'"/>'+(bad?'<div class="errmsg">'+bad+'</div>':'')+'</div>'; }
+    return '<div class="eyebrow">Step 1 of 3 · Create profile</div>'+
+      '<div class="h1">Create your<br>profile</div>'+
+      '<div class="progress"><i style="width:33%"></i></div>'+
+      f('rname','Full name','text','Alex Reyes', e?'Enter your name.':'')+
+      f('remail','Email','email','anna.reyes@email.com', e?'Use a valid email address.':'')+
+      f('rphone','Phone','tel','(704) 555-0142', e?'Use a valid mobile number that can receive texts.':'')+
+      '<div style="height:8px"></div>'+
+      btn('Verify phone &amp; continue',"regSubmit()")+
+      '<p class="small muted" style="text-align:center;margin-top:14px">We text a one-time code to confirm your number.</p>';
+  }
+};
+S.otp = {
+  flow:"onboarding", phase:"Registration", step:"02 · Phone Verification", id:"3.3",
+  title:"Verify your phone", skinTag:"League",
+  story:"As a new user, I want to confirm my number with a code, so my account and wallet are secured.",
+  ac:["A 4-digit code is sent by SMS; entry auto-advances and verifies.","Wrong or expired codes show inline errors with a resend option.","Too many attempts triggers a temporary lock."],
+  eng:"On success: phoneVerified=true → invisible wallet provisioning → home.",
+  ctas:["(auto-verify on 4 digits) → Provisioning","Resend code / Edit phone"],
+  prev:"3.2 Profile", next:"3.4 Provisioning",
+  variants:[["Wrong code","ev('otp')"],["Resend / delivery failure","ev('otpResend')"]],
+  body:function(){
+    var er=state.e.otp;
+    return head('',{back:true})+
+      '<div class="screen" style="padding-top:0">'+
+      '<div class="eyebrow">Step 2 of 3 · Verify</div>'+
+      '<div class="h1">Enter the code</div>'+
+      '<p class="p">Sent to +1 (704) ••• ••42.'+(state.e.otpResend?' <span style="color:#ff8b78">We couldn’t send the code — check your number.</span>':'')+'</p>'+
+      '<div class="otpgrid '+(er?'err':'')+'">'+
+        [0,1,2,3].map(function(i){return '<input id="otp'+i+'" inputmode="numeric" maxlength="1" oninput="otpKey(event,'+i+')"/>';}).join('')+
+      '</div>'+
+      (er?'<div class="errmsg" style="justify-content:center">That code doesn’t match. Try again.</div>':'')+
+      '<div style="text-align:center;margin-top:8px">'+pill('⏱ Code expires in 4:58','pend')+'</div>'+
+      '<div style="height:18px"></div>'+
+      btn('Verify',"otpVerify()")+
+      '<div style="height:10px"></div>'+
+      btn('Resend code',"otpResend()","ghost")+'</div>';
+  },
+  noWrap:true
+};
+S.provisioning = {
+  flow:"onboarding", phase:"Registration", step:"02 · Wallet Provisioning", id:"3.4",
+  title:"Setting up your wallet", skinTag:"League",
+  story:"As a new user, I want my wallet ready behind the scenes, so I can buy without any setup friction.",
+  ac:["A brief loader provisions the wallet invisibly.","If provisioning lags, the user still reaches home with purchase temporarily disabled.","No backend or wallet-infrastructure language is shown."],
+  eng:"walletProvisioned=true on completion; walletPending=true routes to home with buy disabled.",
+  ctas:["(auto) → Home"],
+  prev:"3.3 OTP", next:"3.12 Home",
+  variants:[["Provisioning delay","ev('walletPending')"]],
+  body:function(){
+    setTimeout(function(){ if(state.screen==='provisioning'){ state.onboarded=false; go('home'); toast('Account created'); } },1300);
+    return '<div style="text-align:center;padding-top:200px">'+
+      '<div class="medallion" style="animation:flash 1s ease infinite alternate">$1</div>'+
+      '<div class="h2" style="margin-top:24px">Setting up your wallet…</div>'+
+      '<p class="p">This only takes a moment.</p></div>';
+  },
+  noHead:true
+};
+S.signin = {
+  flow:"onboarding", phase:"Entry", step:"03 · Returning Sign-in", id:"3.5",
+  title:"Sign in", skinTag:"League",
+  story:"As a returning fan, I want to sign back in, so I land on the right screen for my pledge status.",
+  ac:["Email or phone identifies the account; a one-time code or saved auth verifies.","Routing depends on state: pledged → team dashboard, tokens-no-pledge → unpledged home, else neutral home.","No account found offers create-account; suspended accounts route to support."],
+  eng:"Success-routing loader (3.6) branches per session: pledge / unpledged / neutral / resume.",
+  ctas:["Continue → OTP → routing","Create account (not-found)"],
+  prev:"3.1 Splash", next:"3.3 → 3.6 routing",
+  variants:[["Account not found","ev('notfound')"],["Suspended account","ev('suspended')"]],
+  body:function(){
+    return head('',{back:true})+'<div class="screen" style="padding-top:0">'+
+      '<div class="h1">Welcome back</div>'+
+      '<p class="p">Sign in to your NFL Wallet.</p>'+
+      '<div class="field"><label>Email or phone</label><input placeholder="anna.reyes@email.com"/></div>'+
+      '<div style="height:8px"></div>'+
+      btn('Continue',"go('otp')")+
+      '<div style="height:10px"></div>'+
+      btn('Create account instead',"go('profile')","ghost")+
+      '<div class="card" style="margin-top:20px"><div class="small muted">Demo shortcuts</div>'+
+      '<div class="navrow" style="margin-top:8px"><button onclick="signinAs(\'pledged\')">Pledged user</button><button onclick="signinAs(\'unpledged\')">Tokens, no pledge</button></div></div></div>';
+  },
+  noHead:true
+};
+
+/* ---------- ACQUISITION (reward-first · Layer 1–3) ---------- */
+function acqT(){ return TEAMS[state.acqTeam]||TEAMS["carolina-panthers"]; }
+function rewardHero(opts){
+  opts=opts||{}; var t=acqT(), r=state.reward;
+  var exp=state.e.rwExpired, claimed=state.e.rwClaimed;
+  return '<div class="card tint" style="border-color:var(--accent);overflow:hidden;padding:0">'+
+    '<div style="height:118px;background:linear-gradient(150deg,var(--grad1),var(--grad2));display:flex;align-items:center;justify-content:center;position:relative">'+
+      '<div class="lg" style="width:62px;height:62px;border-radius:18px;background:rgba(255,255,255,.16);color:#fff;border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;display:block">'+I.gift+'</span></div>'+
+      '<div style="position:absolute;top:10px;left:10px">'+pill(t.abbr+' · Reward','gold')+'</div>'+
+      (r.perFan?'<div style="position:absolute;top:10px;right:10px"><span class="pill" style="background:rgba(0,0,0,.4);color:#fff">1 per fan</span></div>':'')+
+    '</div>'+
+    '<div style="padding:14px">'+
+      '<div class="row"><b style="font-size:16px">'+r.name+'</b><span class="pill" style="background:rgba(233,201,119,.18);color:var(--accent2)">PLACEHOLDER</span></div>'+
+      '<div class="small muted" style="margin-top:4px">Value '+r.value+' · '+r.window+'</div>'+
+      (exp?'<div class="errmsg" style="margin-top:8px">This reward has expired — you can still buy tokens.</div>':'')+
+      (claimed?'<div class="small" style="margin-top:8px;color:#52d18a">✓ Already claimed for this wallet</div>':'')+
+      (opts.note?'<div class="small muted" style="margin-top:8px">'+opts.note+'</div>':'')+
+    '</div></div>';
+}
+function qrBox(){
+  var m='', seed=7;
+  for(var y=0;y<29;y++){for(var x=0;x<29;x++){ seed=(seed*1103515245+12345)&0x7fffffff;
+    if((x<8&&y<8)||(x>20&&y<8)||(x<8&&y>20)) continue;
+    if((seed>>9)&1){ m+='<rect x="'+x+'" y="'+y+'" width="1" height="1"/>'; } }}
+  function fnd(fx,fy){ return '<rect x="'+fx+'" y="'+fy+'" width="7" height="7"/><rect x="'+(fx+1)+'" y="'+(fy+1)+'" width="5" height="5" fill="#fff"/><rect x="'+(fx+2)+'" y="'+(fy+2)+'" width="3" height="3"/>'; }
+  return '<div style="width:152px;height:152px;margin:14px auto;background:#fff;border-radius:14px;padding:11px">'+
+    '<svg viewBox="0 0 29 29" width="100%" height="100%" shape-rendering="crispEdges" fill="#0B0E12"><rect width="29" height="29" fill="#fff"/>'+fnd(0,0)+fnd(22,0)+fnd(0,22)+m+'</svg></div>';
+}
+
+S.rewardLanding = {
+  flow:"acquisition", phase:"Entry · Layer 1", step:"00 · Reward Landing", id:"3.39",
+  title:"Reward landing", skinTag:"Team (campaign)", dynamicSkin:true,
+  story:"As a fan scanning a team campaign QR or promo, I want to see the reward first, so claiming it feels like the point and tokens are just the mechanism.",
+  ac:["Reward-first hero is skinned from the campaign team_id with no tab bar.","Shows reward name, value, availability window, eligibility and a 1-per-fan badge.","Primary CTA leads to claim; logged-in fans skip auth, others hit the login gate."],
+  eng:"Parse campaign payload (team_id, reward_id, source); attach team context; never block on a dead reward.",
+  ctas:["Claim with [Team] Tokens → Login gate / Purchase","How it works → explainer"],
+  prev:"Campaign QR / banner / promo", next:"3.40 / 3.42",
+  variants:[["Logged-in · skip auth","go('rewardPurchase')"],["Reward expired","ev('rwExpired')"],["Already claimed","ev('rwClaimed')"],["Boost-paired","ev('boostPair')"],["Unsupported team","goWaitlist()"]],
+  body:function(){
+    var t=acqT();
+    return '<div class="apphead">'+teamHeaderFull(currentTeamId())+'<div style="flex:1"></div></div>'+
+    '<div class="screen" style="padding-top:0">'+
+    '<div class="eyebrow">Get your '+t.name+'</div>'+
+    '<div class="h1">Claim your<br>game-day reward</div>'+
+    rewardHero({note:'Tokens unlock this reward and keep you earning '+t.abbr+' points all season.'})+
+    (state.e.boostPair?'<div class="card" style="background:rgba(255,106,0,.12);border-color:#FF6A00"><div class="row"><b style="color:#ff944d">⚡ 3× game-day boost</b>'+pill('29:54','boost')+'</div><div class="small muted">Claim now to also earn boosted points.</div></div>':'')+
+    btn((state.e.rwExpired?'Get '+t.abbr+' Tokens':'Claim with '+t.abbr+' Tokens'),"go('loginGate')")+
+    '<div style="height:10px"></div>'+
+    btn('How it works',"acqHow()","ghost")+
+    '<p class="small muted" style="text-align:center;margin-top:14px">Powered by Republic · $1.00 per token</p>'+
+    '</div>';
+  },
+  noHead:true
+};
+S.loginGate = {
+  flow:"acquisition", phase:"Entry · Identity", step:"00 · Login Gate", id:"3.40",
+  title:"Quick login", skinTag:"Team (checkpoint)",
+  story:"As a fan claiming a reward, I want a quick login checkpoint, so I return straight to my reward without full onboarding.",
+  ac:["Compact checkpoint over the reward context — not full onboarding — with the reward retained.","Login options appear in priority order: team account, Ticketmaster / Account Manager, passkey, email, phone.","Create account is offered only when no identity matches; returning accounts route to the funded wallet."],
+  eng:"Identity resolution A–E; on success return to the exact reward/purchase step. Never expose balance pre-auth.",
+  ctas:["Team account → Purchase","Ticketmaster / passkey / email / phone → Purchase","Create account → Profile"],
+  prev:"3.39 Reward landing", next:"3.42 Purchase",
+  variants:[["Returning detected → wallet","go('funded')"],["Passkey declined → email","toast('Use email instead')"],["Invalid email","toast('Use a valid email address','warn')"]],
+  body:function(){
+    var t=acqT();
+    return head('',{back:true})+'<div class="screen" style="padding-top:0">'+
+    '<div class="card tint" style="display:flex;gap:12px;align-items:center"><div class="lg" style="width:40px;height:40px;background:var(--accent);color:var(--aink)">'+t.abbr+'</div><div><b>'+state.reward.name+'</b><div class="small muted">Reward held — finish login to claim</div></div></div>'+
+    '<div class="h1" style="margin-top:6px">Quick login</div>'+
+    '<p class="p">We’ll take you right back to your reward.</p>'+
+    btn(t.name+' account',"acqLogin('team')")+
+    '<div style="height:8px"></div>'+
+    btn('Ticketmaster / Account Manager',"acqLogin('tm')","soft")+
+    '<div style="height:8px"></div>'+
+    btn('Passkey / Face ID',"acqLogin('passkey')","soft")+
+    '<div style="height:8px"></div>'+
+    btn('Continue with email',"acqLogin('email')","soft")+
+    '<div style="height:8px"></div>'+
+    btn('Continue with phone',"acqLogin('phone')","soft")+
+    '<div class="chiprow" style="margin-top:14px"><div class="qchip" style="flex:1" onclick="go(\'profile\')">Create account</div><div class="qchip" style="flex:1" onclick="go(\'funded\')">I have a wallet</div></div>'+
+    '</div>';
+  },
+  noHead:true
+};
+S.rewardPurchase = {
+  flow:"acquisition", phase:"Purchase · Reward-framed", step:"00 · Reward-Framed Purchase", id:"3.42",
+  title:"Unlock your reward", skinTag:"Team",
+  story:"As a fan, I want to buy a token pack with my reward pinned in view, so I know exactly what my purchase unlocks.",
+  ac:["Reward card stays pinned at the top; team is already attached — no team picker.","Pack selector offers $10 Starter / $25 Most popular (default) / $50 Superfan at $1 per token.","Payment CTA adapts to context (reward, boost, or top-up) and opens Apple Pay / card."],
+  eng:"On success: credit tokens, default-pledge to team, mark reward unlocked, init team points — silently.",
+  ctas:["Unlock reward · $[pack] → Reward unlock"],
+  prev:"3.39 / 3.40", next:"3.43 Reward unlock",
+  variants:[["Boost-paired CTA","ev('boostPair')"],["Reward expired (framing off)","ev('rwExpired')"],["Apple Pay unavailable → card","ev('apUnavail')"],["Payment declined","ev('pay')"]],
+  body:function(){
+    var t=acqT(), price=state.pack.toFixed(2);
+    var label = state.e.rwExpired ? ('Get '+t.abbr+' Tokens · $'+price)
+      : state.e.boostPair ? ('Buy & unlock boost · $'+price)
+      : ('Unlock reward · $'+price);
+    return head('Unlock your reward',{back:true})+'<div class="screen" style="padding-top:0">'+
+    (state.e.rwExpired?'':rewardHero({note:'Get team tokens. Unlock reward. Earn team points.'}))+
+    '<div class="card"><div class="small muted">Choose your pack · $1.00 per token</div>'+
+    '<div class="chiprow" style="margin-top:10px">'+PACKS.map(function(p){var on=state.pack===p[0];
+      return '<div class="qchip '+(on?'on':'')+'" style="flex:1;min-width:92px" onclick="setPack('+p[0]+')"><div style="font-size:18px">$'+p[0]+'</div><div class="small" style="font-weight:600;opacity:.8">'+p[1]+'</div></div>';
+    }).join('')+'</div></div>'+
+    '<div class="card"><div class="row"><span class="muted">'+state.pack+' tokens × $1.00</span><b>$'+price+'</b></div>'+
+    '<div class="row" style="margin-top:8px"><span class="muted">Pledged to</span><b>'+t.abbr+'</b></div>'+
+    '<div class="row" style="margin-top:8px"><span class="muted">Pay with</span><b>'+(state.e.apUnavail?'Visa •••• 6411':' Apple Pay')+'</b></div></div>'+
+    '<div class="card" style="background:rgba(255,255,255,.04)"><div class="small">Tokens stay in your wallet. Your reward unlocks after purchase. You’ll start earning '+t.name+' points.</div></div>'+
+    btn(label,"acqPay()")+'</div>';
+  },
+  noHead:true
+};
+S.rewardUnlock = {
+  flow:"acquisition", phase:"Payoff · Reward", step:"00 · Reward Unlock / Voucher", id:"3.43",
+  title:"Reward unlocked", skinTag:"Team",
+  story:"As a fan, I just unlocked my reward and want a scannable voucher, so I can redeem it at the stadium.",
+  ac:["Celebratory unlock confirms the reward with a single-use, scannable voucher and expiry.","Copy reassures that tokens stay in the wallet and the reward is single-use.","Primary action shows the QR; secondary returns to the funded wallet."],
+  eng:"Reward marked unlocked; voucher dedupe per wallet (not per scan); offline scans queue and reconcile.",
+  ctas:["Show QR at any participating stand","Back to wallet → Funded wallet"],
+  prev:"3.42 Purchase", next:"3.47 Funded wallet",
+  variants:[["Already redeemed","ev('rwClaimed')"],["Reward expired","ev('rwExpired')"],["Age-gated (beer) check","acqAgeGate()"],["Offline scanner","toast('Saved — will validate at the stand')"]],
+  body:function(){
+    var t=acqT(), r=state.reward;
+    var redeemed=state.e.rwClaimed, expired=state.e.rwExpired;
+    return '<div class="screen" style="padding-top:0;text-align:center">'+
+    '<div style="padding-top:18px"></div>'+
+    '<div class="medallion" style="background:radial-gradient(circle at 35% 30%,#52d18a,#1F9D55)">✓</div>'+
+    '<div class="h1" style="margin-top:14px">Reward<br>unlocked</div>'+
+    '<p class="p" style="max-width:250px;margin:8px auto 0">'+r.name+' · added to your '+t.abbr+' wallet.</p>'+
+    '<div class="card" style="text-align:left">'+
+      '<div class="row"><b>'+r.name+'</b>'+pill(expired?'Expired':(redeemed?'Redeemed':'Active'),expired?'warn':(redeemed?'pend':'ok'))+'</div>'+
+      '<div class="small muted" style="margin-top:4px">'+r.window+' · Single-use</div>'+
+      (redeemed?'<p class="p" style="text-align:center">This voucher has already been used.</p>':(expired?'<p class="p" style="text-align:center">This voucher is no longer valid.</p>':qrBox()))+
+      '<div class="small muted" style="text-align:center">'+((redeemed||expired)?'':'Show this code at any participating stand')+'</div>'+
+    '</div>'+
+    '<div class="card" style="background:rgba(255,255,255,.04)"><div class="small">Your tokens stay in your wallet and keep earning '+t.abbr+' points.</div></div>'+
+    btn('Back to wallet',"acqHandoff()")+
+    '<div style="height:10px"></div>'+
+    btn('How redemption works',"acqHow()","ghost")+
+    '</div>';
+  },
+  noHead:true
+};
+S.funded = {
+  flow:"acquisition", phase:"Payoff · Wallet", step:"00 · Funded Team Wallet", id:"3.47",
+  title:"Team wallet", skinTag:"Team", dynamicSkin:true,
+  story:"As a returning or just-funded fan, I want to land in my team wallet, so I can see balance, tier and today’s reward and keep earning.",
+  ac:["Team-skinned funded wallet shows balance, tier and progress to next tier.","Surfaces today’s reward or an active boost, plus top-up, raffle and referral entries.","Returning fans skip onboarding; an expired session must re-auth before balance is shown."],
+  eng:"Recompute tier from balance + any top-up; never replay tier-unlock if already above threshold; no silent re-skin on a different-team campaign.",
+  ctas:["Buy more tokens → Buy","Enter raffle → Raffle","Refer a fan → Referral","View points → Dashboard"],
+  prev:"3.43 Unlock / returning entry", next:"existing app (Buy / Raffle / Dashboard)",
+  variants:[["Reward claimed state","ev('rwClaimed')"],["Boost active","ev('boostPair')"],["Session expired → re-auth","acqReauth()"]],
+  body:function(){
+    var t=acqT();
+    return '<div class="apphead">'+teamHeaderFull(currentTeamId())+'<div style="flex:1"></div><div class="iconbtn">⚙</div></div>'+
+    '<div class="screen">'+
+    '<div class="card tint" style="border-color:var(--accent)"><div class="small muted">Welcome back, Alex</div>'+
+    '<div class="row" style="margin-top:6px"><div class="bignum">'+state.pack+' <span style="font-size:14px;color:var(--muted)">Tokens</span></div>'+
+    '<div style="text-align:right"><div class="small muted">Points</div><div class="bignum" style="font-size:22px">1,240</div></div></div>'+
+    '<div class="row" style="margin-top:8px"><div>'+pill('Bronze tier','gold')+'</div><div class="small muted">62% to Silver</div></div>'+
+    '<div class="progress"><i style="width:62%"></i></div></div>'+
+    (state.e.boostPair?'<div class="card" style="background:rgba(255,106,0,.12);border-color:#FF6A00"><div class="row"><b style="color:#ff944d">⚡ 3× boost active</b>'+pill('29:54','boost')+'</div><div class="small muted">Buy more before kickoff to earn 3×.</div></div>':
+    '<div class="card" style="background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;color:#fff">'+
+      '<div class="small" style="opacity:.92;text-transform:uppercase;letter-spacing:.08em;font-weight:800">⚡ Live at the stadium</div>'+
+      '<b style="font-size:19px;display:block;margin-top:4px;color:#fff;line-height:1.15">'+(state.e.rwClaimed?'Reward claimed —<br>enjoy the game':'Your game-day reward<br>is waiting on the field')+'</b>'+
+      '<div class="small" style="opacity:.92;margin-top:6px">'+(state.e.rwClaimed?state.reward.name+' redeemed ✓ · new drops all game long':state.reward.name+' · scan at any stand before the final whistle')+'</div>'+
+      '<div style="height:14px"></div>'+
+      (state.e.rwClaimed
+        ? '<div style="text-align:center">'+pill('Claimed','pend')+'</div>'
+        : '<button class="btn" style="background:#fff;color:var(--accent);font-weight:800" onclick="toast(\'Reward ready — show this at the stand\')">Claim my reward now</button>')+
+    '</div>')+
+    '<div class="card" style="padding:6px 14px">'+
+    [['Buy more tokens','Top up your wallet',"go('buy')",I.bolt],
+     ['Enter a raffle','Spend points on prizes',"goFlow('raffle')",I.gift],
+     ['Refer a fan','+5 tokens for both',"goFlow('referral')",I.star],
+     ['View points & tier','Your full dashboard',"acqDash()",I.slid]].map(function(r){
+      return '<div class="listrow" onclick="'+r[2]+'"><div class="ic">'+r[3]+'</div><div class="gr"><div class="t">'+r[0]+'</div><div class="d">'+r[1]+'</div></div>'+I.chev+'</div>';
+    }).join('')+'</div>'+
+    '</div>';
+  },
+  tab:"home", noHead:true
+};
+S.waitlist = {
+  flow:"acquisition", phase:"Fallback · Layer 3", step:"00 · Unsupported-Team Waitlist", id:"3.48",
+  title:"Team waitlist", skinTag:"League (neutral)",
+  story:"As a fan whose team isn’t in the pilot, I want to signal support and not hit a dead end, so I stay engaged until my team launches.",
+  ac:["Neutral League skin with no dead-end; explains the team isn’t available yet.","Lets the fan join the waitlist, pick an available pilot team, or continue with the NFL wallet.","A later team QR for a launched team routes straight into that team’s flow."],
+  eng:"Record waitlist signal (team, contact); keep pilot-team alternatives one tap away; never trap the fan.",
+  ctas:["Join the waitlist","Choose an available team → Manual picker","Continue with NFL wallet → Home"],
+  prev:"Unsupported team in campaign/identity", next:"3.10 / 3.12",
+  variants:[["Joined confirmation","joinWaitlist()"],["Physically at a pilot stadium","toast('Showing teams near you')"]],
+  body:function(){
+    return head('',{back:true})+'<div class="screen" style="padding-top:0;text-align:center">'+
+    '<div style="padding-top:40px"></div>'+
+    '<div class="iconbtn" style="width:80px;height:80px;border-radius:24px;margin:0 auto;color:var(--accent2)"><span style="width:40px;height:40px;display:block">'+I.star+'</span></div>'+
+    '<div class="h1" style="margin-top:18px">Your team<br>isn’t here yet</div>'+
+    '<p class="p" style="max-width:260px;margin:10px auto 22px">Signal your support and we’ll let you know the moment your team launches on NFL Wallet.</p>'+
+    btn('Join the waitlist',"joinWaitlist()")+
+    '<div style="height:10px"></div>'+
+    btn('Choose an available team',"go('manualPicker')","soft")+
+    '<div style="height:10px"></div>'+
+    btn('Continue with NFL wallet',"acqContinueNeutral()","ghost")+
+    '<div style="height:14px"></div>'+
+    '<div class="small muted">Pilot teams: Panthers · Dolphins · Eagles · 49ers · Patriots</div>'+
+    '</div>';
+  },
+  noHead:true
+};
+
+/* ---------- PURCHASE ---------- */
+S.home = {
+  flow:"purchase", phase:"Activation", step:"03 · Home / Get Started", id:"3.12",
+  title:"NFL Wallet", skinTag:"League",
+  story:"As a fan, I want the app to show my balance and a clear way to start, so I can begin buying tokens right away.",
+  ac:["Home shows token balance, points and pledged team (empty until pledge).","A persistent Buy tokens CTA drives the $1-each purchase path.","Neutral League skin with a friendly empty state — no error for having nothing yet."],
+  eng:"Home state derives from balance + pledge: none / tokens-no-pledge / pledged / incomplete.",
+  ctas:["Buy tokens → Buy","(unpledged) Pledge now → Pledge"],
+  prev:"3.4 / 3.6", next:"3.13 Buy",
+  variants:[["Unpledged-tokens card","ev('unpledged')"],["Pending purchase","ev('pending')"],["Offline home","ev('offline')"]],
+  body:function(){
+    var up = state.e.unpledged || (state.wallet.unpledged>0 && !state.primaryTeam);
+    return '<div class="apphead"><div class="ht" style="text-transform:none;font-size:15px;color:var(--muted)">Welcome,<br><span style="font-size:22px;color:var(--txt);text-transform:uppercase;font-family:var(--display)">Alex</span></div>'+
+      '<div class="iconbtn">⚙</div></div>'+
+      '<div class="card tint"><div class="small muted">Wallet balance</div>'+
+      '<div class="row" style="margin-top:6px"><div class="bignum">'+(up?'50':'0')+' <span style="font-size:14px;color:var(--muted)">Tokens</span></div>'+
+      '<div style="text-align:right"><div class="small muted">Points</div><div class="bignum" style="font-size:22px">0</div></div></div>'+
+      '<div class="small muted" style="margin-top:8px">Team: <b style="color:var(--txt)">none yet</b></div></div>'+
+      (up
+        ? '<div class="card" style="border-color:var(--accent2)"><div class="row"><div><b>You have unpledged tokens</b><div class="small muted">50 tokens ready to pledge — they earn nothing until you do.</div></div></div>'+
+          '<div style="height:12px"></div>'+btn('Pledge now',"go('pledge')")+'<div style="height:8px"></div>'+btn('Buy more',"go('buy')","soft")+'</div>'
+        : '<div class="card"><div class="eyebrow">Get NFL Tokens</div><div class="h2" style="margin-top:4px">Start earning with your team</div>'+
+          '<p class="small muted">Fixed price — $1.00 each. Buy, then pledge to unlock your team.</p>'+
+          '<div style="height:12px"></div>'+btn('Buy tokens',"go('buy')")+'</div>')+
+      '<div class="card"><div class="small muted">Quick links</div>'+
+      '<div class="listrow" onclick="go(\'boost\')"><div class="ic">'+I.bolt+'</div><div class="gr"><div class="t">Game-day boost</div><div class="d">See if a multiplier is active</div></div>'+I.chev+'</div>'+
+      '<div class="listrow" onclick="go(\'signin\')"><div class="ic">'+I.star+'</div><div class="gr"><div class="t">Ways to earn</div><div class="d">Quests, referrals & raffles</div></div>'+I.chev+'</div></div>';
+  },
+  noHead:true
+};
+S.buy = {
+  flow:"purchase", phase:"Purchase", step:"04 · Buy Tokens", id:"3.13",
+  title:"Buy NFL Tokens", skinTag:"League",
+  story:"As a fan, I want to buy a chosen quantity at $1 each, so I can fund my pledge and start earning.",
+  ac:["Price fixed at $1.00/token; total = quantity × $1.00, updating live.","Quantity adjustable via stepper and quick amounts (10 / 50 / 100); minimum 1.","A payment method is required before review."],
+  eng:"Purchased tokens are unpledged until the pledge step — they sit in the wallet earning nothing.",
+  ctas:["Review purchase → Review"],
+  prev:"3.12 / 3.21 / 3.19", next:"3.14 Review",
+  variants:[["Quantity zero / invalid","ev('qty0')"],["No payment method","ev('nomethod')"]],
+  body:function(){
+    var q=state.qty, total=(q*state.wallet.price).toFixed(2);
+    var boost = state.boost.active && !state.boost.expired;
+    return head('Buy NFL Tokens',{back:true})+
+    '<div class="screen" style="padding-top:0">'+
+    (boost?'<div class="card" style="background:rgba(255,106,0,.12);border-color:#FF6A00"><div class="row"><div><b style="color:#ff944d">⚡ 3× game-day boost active</b><div class="small muted">Buy &amp; pledge now to earn boosted points.</div></div>'+pill('29:54','boost')+'</div></div>':'')+
+    '<div class="card tint" style="text-align:center"><div class="small muted">$1.00 per token</div>'+
+    '<div class="stepper"><button onclick="setQty(-1)">−</button><div class="val">'+q+'</div><button onclick="setQty(1)">+</button></div>'+
+    '<div class="chiprow">'+[10,50,100].map(function(n){return '<div class="qchip '+(q===n?'on':'')+'" onclick="setQty(0,'+n+')">'+n+'</div>';}).join('')+'</div></div>'+
+    '<div class="card"><div class="row"><span class="muted">Tokens</span><b>'+q+' × $1.00</b></div>'+
+    '<div class="row" style="margin-top:10px;font-size:20px"><b>Total</b><b style="color:var(--accent2)">$'+total+'</b></div></div>'+
+    '<div class="card"><div class="row" onclick="pickMethod()" style="cursor:pointer">'+
+      '<div><div class="small muted">Pay with</div><b>'+(state.e.nomethod?'No method on file':' Apple Pay · Panthers Visa •••• 6411')+'</b></div>'+I.chev+'</div></div>'+
+    btn('Review purchase · $'+total,"reviewGuard()")+'</div>';
+  },
+  noHead:true
+};
+S.review = {
+  flow:"purchase", phase:"Purchase", step:"04 · Review Purchase", id:"3.14",
+  title:"Review purchase", skinTag:"League",
+  story:"As a fan, I want a clear summary before paying, so I know exactly what I’m buying.",
+  ac:["Review reflects the selected quantity, unit price and total.","Payment method is shown and confirmable.","Confirm opens the payment sheet; next step is pledging to a team."],
+  eng:"On confirm → payment intent created → Apple Pay / card sheet (3.15).",
+  ctas:["Confirm purchase → Apple Pay sheet"],
+  prev:"3.13 Buy", next:"3.15 Payment",
+  variants:[],
+  body:function(){
+    var q=state.qty,total=(q*state.wallet.price).toFixed(2);
+    return head('Review',{back:true})+'<div class="screen" style="padding-top:0">'+
+    '<div class="h1">Confirm your<br>purchase</div>'+
+    '<div class="card"><div class="row"><span class="muted">Tokens</span><b>'+q+'</b></div>'+
+    '<div class="row" style="margin-top:10px"><span class="muted">Price each</span><b>$1.00</b></div>'+
+    '<div class="row" style="margin-top:10px"><span class="muted">Payment</span><b>Apple Pay •••• 6411</b></div>'+
+    '<hr style="border:none;border-top:1px solid var(--line);margin:14px 0"/>'+
+    '<div class="row" style="font-size:20px"><b>Total</b><b style="color:var(--accent2)">$'+total+'</b></div></div>'+
+    '<div class="card" style="background:rgba(200,162,75,.08)"><div class="small">Next: <b>pledge these tokens to a team</b> to unlock your skin and start earning.</div></div>'+
+    btn('Confirm purchase · $'+total,"openPay()")+'</div>';
+  },
+  noHead:true
+};
+S.success = {
+  flow:"purchase", phase:"Purchase", step:"04 · Purchase Success", id:"3.16",
+  title:"Tokens purchased", skinTag:"League",
+  story:"As a fan, I just bought tokens and want a clear next step, so I move straight into supporting my team.",
+  ac:["Celebratory confirmation shows the token count purchased.","A single clear CTA moves the user to pledging.","If a team was already chosen, route to pledge; otherwise to detection."],
+  eng:"unpledged += qty; txn=created; route → 3.7 (no team) or 3.17 (team chosen).",
+  ctas:["Pledge tokens → Location / Pledge"],
+  prev:"3.15 Payment", next:"3.7 / 3.17",
+  variants:[["Token credit delayed","ev('credit')"]],
+  body:function(){
+    return '<div style="text-align:center;padding-top:120px">'+
+      '<div class="medallion" style="background:radial-gradient(circle at 35% 30%,#52d18a,#1F9D55)">✓</div>'+
+      '<div class="h1" style="margin-top:18px">'+state.qty+' tokens<br>purchased</div>'+
+      '<p class="p" style="max-width:240px;margin:8px auto 26px">Next: pledge to your team to unlock your skin and start earning.</p>'+
+      btn('Pledge tokens',"afterPurchase()")+
+      '<div style="height:10px"></div>'+
+      btn('Not now',"go('home')","ghost")+'</div>';
+  },
+  noHead:true
+};
+
+/* ---------- TEAM SELECTION ---------- */
+S.location = {
+  flow:"team", phase:"Location / Team", step:"05 · Location Permission", id:"3.7",
+  title:"Find your team", skinTag:"League",
+  story:"As a fan, I want the app to suggest my home team from my location, so my tokens go to the right program.",
+  ac:["App requests location; if granted, the region maps to a suggested team.","If denied / unavailable / no eligible team, manual selection is offered.","Location is helpful, never mandatory or coercive."],
+  eng:"granted → 3.8 Team Detected · denied → 3.10 manual · game-day → boostEligible=true.",
+  ctas:["Allow location → Team Detected","Not now → Manual picker"],
+  prev:"3.4 / 3.16", next:"3.8 / 3.10",
+  variants:[["Permission denied","ev('loc')"],["Multiple teams nearby","ev('ambiguous')"]],
+  body:function(){
+    return '<div style="text-align:center;padding-top:90px">'+
+      '<div class="iconbtn" style="width:84px;height:84px;border-radius:24px;margin:0 auto;color:var(--accent2)">'+
+      '<span style="width:42px;height:42px;display:block">'+I.loc+'</span></div>'+
+      '<div class="h1" style="margin-top:20px">Use your<br>location?</div>'+
+      '<p class="p" style="max-width:250px;margin:10px auto 26px">We’ll suggest your home team and unlock game-day boosts when you’re at the stadium.</p>'+
+      btn('Allow location',"allowLocation()")+
+      '<div style="height:10px"></div>'+
+      btn('Not now — choose manually',"deny('skip')","ghost")+'</div>';
+  },
+  noHead:true
+};
+S.teamDetected = {
+  flow:"team", phase:"Location / Team", step:"05 · Team Detected", id:"3.8",
+  title:"Team detected", skinTag:"League (suggested)",
+  story:"As a fan, I want the suggested team confirmed by me, so the pledge feels like my choice.",
+  ac:["Detected region and team are shown with a confirm and an override.","An ambiguous market presents a multi-team chooser.","Detection only suggests — nothing is committed until pledge."],
+  eng:"Sounds good → selectedTeam=detected → 3.17. Choose different → 3.10.",
+  ctas:["Sounds good → Pledge","Choose a different team → Manual"],
+  prev:"3.7 Location", next:"3.17 / 3.10",
+  variants:[["Multi-team chooser","ev('ambiguous')"],["At stadium, different team","go('manualPicker')"]],
+  body:function(){
+    if(state.e.ambiguous){
+      return head('',{back:true})+'<div class="screen" style="padding-top:0">'+
+        '<div class="eyebrow">'+I.loc.replace('width="24"','width="12"')+' Charlotte metro</div>'+
+        '<div class="h1">We found a few<br>teams near you</div>'+
+        '<p class="p">Pick the team you want to support.</p>'+
+        ["carolina-panthers","atlanta-falcons"].map(function(id){var t=TEAMS[id];
+          return '<div class="card" style="cursor:pointer" onclick="chooseTeam(\''+id+'\');go(\'pledge\')"><div class="row"><div class="alloc-team" style="margin:0"><div class="lg" style="background:'+t.c+'">'+t.abbr+'</div><b>'+t.name+'</b></div>'+I.chev+'</div></div>';}).join('')+
+        btn('More teams',"go('manualPicker')","ghost")+'</div>';
+    }
+    return '<div style="text-align:center;padding:70px 0 0">'+
+      '<div style="display:inline-flex;align-items:center;gap:6px">'+pill('📍 North Carolina detected','gold')+'</div>'+
+      '<div class="lg" style="width:88px;height:88px;border-radius:26px;background:#0085CA;color:#fff;font-weight:900;font-size:26px;display:flex;align-items:center;justify-content:center;margin:22px auto 0">CAR</div>'+
+      '<div class="h1" style="margin-top:16px">Your home team is the<br>Carolina Panthers</div>'+
+      '<p class="p" style="max-width:250px;margin:10px auto 24px">Your tokens will be pledged to the Panthers’ points program. You can change this anytime.</p>'+
+      btn('Sounds good',"chooseTeam('carolina-panthers');go('pledge')")+
+      '<div style="height:10px"></div>'+
+      btn('Choose a different team',"go('manualPicker')","ghost")+'</div>';
+  },
+  noHead:true
+};
+S.manualPicker = {
+  flow:"team", phase:"Location / Team", step:"05 · Manual Team Picker", id:"3.10",
+  title:"Choose your team", skinTag:"League",
+  story:"As a fan, I want to pick my team myself, so my fandom isn’t decided by geography.",
+  ac:["First-cohort teams are listed with logos, names and search.","Teams outside the beta cohort show an unavailable state with notify-me.","Continuing without a selection shows an inline error."],
+  eng:"select + Confirm → selectedTeam=X, source=manual → 3.11 → 3.17.",
+  ctas:["Confirm team → Pledge"],
+  prev:"3.7 / 3.8", next:"3.17 Pledge",
+  variants:[["Team not in cohort","ev('unsupported')"],["No selection error","ev('noTeam')"]],
+  body:function(){
+    var list = ["carolina-panthers","miami-dolphins","atlanta-falcons","new-orleans-saints"];
+    return head('',{back:true})+'<div class="screen" style="padding-top:0">'+
+      '<div class="h1">Choose your<br>team</div>'+
+      '<div class="field"><input placeholder="Search teams…" oninput="searchTeam(this.value)"/></div>'+
+      (state.e.noTeam?'<div class="errmsg">Choose a team to continue.</div>':'')+
+      '<div id="teamlist">'+list.map(function(id){var t=TEAMS[id];var on=state.team===id;
+        return '<div class="card" style="margin:8px 0;cursor:pointer;'+(on?'border-color:var(--accent2)':'')+'" onclick="chooseTeam(\''+id+'\')"><div class="row"><div class="alloc-team" style="margin:0"><div class="lg" style="background:'+t.c+'">'+t.abbr+'</div><b>'+t.name+'</b></div>'+(on?pill('Selected','ok'):I.chev)+'</div></div>';}).join('')+
+        '<div class="card" style="margin:8px 0;cursor:pointer" onclick="ev(\'unsupported\')"><div class="row"><div class="alloc-team" style="margin:0"><div class="lg" style="background:#444">?</div><b class="muted">Other team…</b></div></div></div>'+
+      '</div>'+
+      (state.e.unsupported?'<div class="card" style="border-color:var(--warn)"><b style="color:#ff8b78">This team isn’t available yet</b><div class="small muted">We’re adding teams each week.</div><div style="height:10px"></div>'+btn('Notify me',"toast('We’ll let you know');ev('unsupported',false)","soft sm")+'</div>':'')+
+      '<div style="height:8px"></div>'+
+      btn('Confirm team',"confirmManual()")+'</div>';
+  },
+  noHead:true
+};
+
+/* ---------- PLEDGE ---------- */
+S.pledge = {
+  flow:"pledge", phase:"Pledge", step:"06 · Pledge & Unlock Skin", id:"3.17",
+  title:"Pledge your tokens", skinTag:"League",
+  story:"As a fan, I want to pledge my tokens to my team, so I start earning points and unlock the branded experience.",
+  ac:["Shows token count and team, defaulting to 100% to the selected team.","Confirming begins points-earning and unlocks the team skin app-wide.","One token can only be pledged to one team — no double-earning."],
+  eng:"Confirm → pledge=created, primaryTeam=X, skin=X, onboardingComplete=true → 3.18.",
+  ctas:["Confirm pledge → Skin unlock","Change team → Manual"],
+  prev:"3.16 / 3.8 / 3.11", next:"3.18 Skin unlock",
+  variants:[["No tokens to pledge","ev('notokens')"],["Pledge processing failure","ev('pledgefail')"],["Already pledged elsewhere","ev('elsewhere')"]],
+  body:function(){
+    var team = state.team || "carolina-panthers", t=TEAMS[team];
+    var tokens = state.e.notokens?0:(state.wallet.unpledged||50);
+    if(tokens===0){
+      return head('',{back:true})+'<div class="screen" style="padding-top:0;text-align:center;padding-top:80px">'+
+      '<div class="h1">No tokens to<br>pledge yet</div><p class="p">Buy tokens before pledging.</p>'+btn('Buy tokens',"go('buy')")+'</div>';
+    }
+    var pct = state.pledgePct==null?100:state.pledgePct;
+    var pledgedTok = Math.max(1,Math.round(tokens*pct/100));
+    return head('Pledge your tokens',{back:true})+'<div class="screen" style="padding-top:0">'+
+      '<div class="card tint" onclick="go(\'manualPicker\')" style="cursor:pointer"><div class="row"><div class="alloc-team" style="margin:0"><div class="lg" style="background:'+t.c+'">'+t.abbr+'</div><div><b>'+t.name+'</b><div class="small muted">Your team · tap to change</div></div></div>'+I.chev+'</div></div>'+
+      '<div class="card" style="text-align:center"><div class="small muted">Pledging</div>'+
+      '<div class="bignum" style="font-size:48px;margin:6px 0">'+pledgedTok+'</div><div class="muted">of '+tokens+' tokens · '+pct+'% to '+t.abbr+'</div>'+
+      '<input type="range" min="1" max="100" value="'+pct+'" oninput="setPledgePct(this.value)" style="width:100%;margin-top:14px;accent-color:var(--accent)"/></div>'+
+      '<div class="card" style="background:rgba(200,162,75,.08)"><div class="small">Pledging unlocks the '+t.name.split(' ').pop()+' skin and starts your points earning. Each token supports one team at a time.</div></div>'+
+      (state.e.pledgefail?'<div class="errmsg">We couldn’t complete your pledge. Your tokens are still in your wallet.</div>':'')+
+      '</div>'+
+      '<div class="ctafooter">'+btn('Confirm pledge',"confirmPledge()")+'</div>';
+  },
+  noHead:true
+};
+S.skinUnlock = {
+  flow:"pledge", phase:"Pledge", step:"06 · Team Skin Unlock", id:"3.18",
+  title:"Skin unlocked", skinTag:"Neutral → Panthers",
+  story:"As a fan, I want a visible payoff for pledging, so it feels like the app became mine.",
+  ac:["The app transitions from neutral League to the team skin.","Pledge total and points-earning state are confirmed.","A single CTA leads into the points dashboard."],
+  eng:"activeSkin=Panthers applied app-wide for all future sessions.",
+  ctas:["View my points → Dashboard"],
+  prev:"3.17 Pledge", next:"3.19 Dashboard",
+  variants:[["Skin asset fail / low bandwidth","ev('skinfail')"]],
+  body:function(){
+    return '<div class="skinflash">'+
+      '<div class="lg" style="width:96px;height:96px;border-radius:28px;background:rgba(255,255,255,.14);color:#fff;font-weight:900;font-size:30px;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.3)">CAR</div>'+
+      '<div class="h1" style="color:#fff;margin-top:22px">Panthers skin<br>unlocked</div>'+
+      '<p style="color:rgba(255,255,255,.85);font-size:14px;max-width:240px;margin:8px auto 4px">'+(state.wallet.pledged||50)+' tokens pledged. You’re earning points now.</p>'+
+      '<div style="height:24px"></div>'+
+      '<div style="width:80%">'+btn('View my points',"go('dashboard')")+'</div></div>';
+  },
+  noHead:true
+};
+
+/* ---------- POINTS ---------- */
+S.dashboard = {
+  flow:"points", phase:"Loyalty", step:"07 · Points Dashboard", id:"3.19",
+  title:"Carolina Panthers", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a pledged fan, I want a dashboard of points, status and ways to earn, so I can track and grow my standing.",
+  ac:["Points balance, tier and pledged tokens are shown with progress to next tier.","Spending points never lowers tier — status tracks cumulative points earned.","Clear entries to Quests, Raffles, Tickets, Referral, Vote and Manage."],
+  eng:"Status is team-scoped lifetime points; available points are spendable. Voting unlocks at Silver.",
+  ctas:["Buy more / Quests / Raffle / Tickets / Refer / Vote / Manage"],
+  prev:"3.18 / 3.6", next:"3.13 / 3.20 / 3.22 / 3.25 / 3.26 / 3.27 / 3.28",
+  variants:[["Zero points post-pledge","ev('zeropts')"],["Points update delayed","ev('ptsdelay')"]],
+  body:function(){
+    var p=state.points, zp=state.e.zeropts;
+    return '<div class="apphead">'+teamHeaderFull(currentTeamId())+'<div style="flex:1"></div><div class="iconbtn">⚙</div></div>'+
+    '<div class="card tint" style="border-color:var(--accent)"><div class="small muted">Your points</div>'+
+    '<div class="bignum" style="font-size:42px;margin:4px 0">'+(zp?'0':p.available.toLocaleString())+'</div>'+
+    '<div class="row"><div>'+pill(p.tier+' tier','gold')+'</div><div class="small muted">'+(state.boost.active?pill('⚡ 3× active','boost'):'')+'</div></div>'+
+    '<div class="tier-ladder"><div class="cur">Bronze</div><div>Silver</div><div>Gold</div><div>Platinum</div></div>'+
+    '<div class="small muted">'+(Math.round(p.prog*100))+'% to '+p.next+' · voting unlocks at Silver</div>'+
+    '<div class="progress"><i style="width:'+(p.prog*100)+'%"></i></div></div>'+
+    (state.e.ptsdelay?'<div class="card"><div class="row">'+pill('⏱ Pending','pend')+'<span class="small muted">+100 pts · updating in a few minutes</span></div></div>':'')+
+    '<div class="card"><div class="small muted">Pledged</div><div class="row" style="margin-top:4px"><b style="font-size:18px">'+(state.wallet.pledged||50)+' tokens → Panthers</b>'+btn('Buy more',"go('buy')","sm")+'</div></div>'+
+    '<div class="h2" style="margin-top:6px">Ways to earn &amp; spend</div>'+
+    '<div class="card" style="padding:6px 14px">'+
+    [['Quests','Earn points & multipliers','quests',I.bolt],
+     ['Raffles','Spend points on prizes','raffle',I.gift],
+     ['Tickets','Buy with cash or points','tickets',I.gift],
+     ['Refer a fan','+5 tokens for both','referral',I.star],
+     ['Vote','Silver tier required','voting',I.star],
+     ['Tier detail','Benefits & progress','tier',I.star],
+     ['Manage pledge','Allocation & team','manage',I.slid]].map(function(r){
+      return '<div class="listrow" onclick="go(\''+r[2]+'\')"><div class="ic">'+r[3]+'</div><div class="gr"><div class="t">'+r[0]+'</div><div class="d">'+r[1]+'</div></div>'+I.chev+'</div>';
+    }).join('')+'</div>';
+  },
+  tab:"home", noHead:true
+};
+S.tier = {
+  flow:"points", phase:"Loyalty", step:"07 · Tier / Status Detail", id:"3.20",
+  title:"Status & tiers", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want to see my tier progress and what the next tier unlocks, so I’m motivated to keep earning.",
+  ac:["Current tier, points and progress to next tier are shown.","Benefits unlocked and upcoming benefits are listed.","Eligibility cues are explicit (voting unlocks at Silver)."],
+  eng:"Tier from cumulative points; spending never demotes. Thresholds: Silver 2,500 / Gold 6,000 / Platinum 12,000.",
+  ctas:["Recommended earn action → Quests"],
+  prev:"3.19 Dashboard", next:"3.22 Quests",
+  variants:[["Tier benefits unavailable","ev('benefits')"]],
+  body:function(){
+    var p=state.points;
+    return head('Status & tiers',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="card tint"><div class="row"><div>'+pill(p.tier+' tier','gold')+'</div><div class="small muted">'+p.lifetime.toLocaleString()+' pts earned</div></div>'+
+    '<div class="progress" style="margin-top:12px"><i style="width:'+(p.prog*100)+'%"></i></div>'+
+    '<div class="small muted" style="margin-top:6px">'+(2500-p.lifetime).toLocaleString()+' pts to '+p.next+'</div></div>'+
+    '<div class="card"><div class="h2">Bronze · current</div><div class="small muted">Raffles, tickets, quests, referrals.</div></div>'+
+    '<div class="card locked"><div class="row"><div class="h2">Silver · next</div>🔒</div><div class="small muted">Unlocks voting + exclusive raffles.</div></div>'+
+    '<div class="card locked"><div class="h2">Gold / Platinum</div><div class="small muted">Premium experiences & sideline rewards.</div></div>'+
+    btn('Earn points in quests',"go('quests')")+'</div>';
+  },
+  tab:"home", noHead:true
+};
+S.activity = {
+  flow:"points", phase:"Management", step:"—  · Activity / History", id:"3.29",
+  title:"Activity", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want a record of purchases, pledges and points, so I trust what happened and can retry failures.",
+  ac:["Chronological list of purchases, pledges, points, raffles, referrals and votes.","Each item shows type, date, amount and status (completed / pending / failed).","Failed eligible actions offer a retry."],
+  eng:"Reads the transaction log; pending and failed surface badges; empty state nudges Buy tokens.",
+  ctas:["Tap item → detail sheet"],
+  prev:"3.19 Dashboard", next:"detail sheet",
+  variants:[["Empty activity","ev('noactivity')"],["Failed item · retry","ev('failed')"]],
+  body:function(){
+    if(state.e.noactivity){
+      return head('Activity',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:60px;text-align:center"><div class="h2">Your activity will appear here</div><p class="p">Buy tokens to get started.</p>'+btn('Buy tokens',"go('buy')")+'</div>';
+    }
+    var rows=[['Token purchase','Sep 1 · 6:42pm','50 tokens / $50.00','ok','Completed'],
+      ['Pledge','Sep 1 · 6:44pm','50 tokens → Panthers','ok','Completed'],
+      ['Points earned','Sep 1 · 6:44pm','+1,000 pts','ok','Completed'],
+      ['Raffle entry','Sep 3 · 12:10pm','−250 pts','pend','Pending'],
+      ['Referral','Sep 4 · 9:00am','+5 tokens','pend','Pending']];
+    if(state.e.failed) rows[3]=['Raffle entry','Sep 3 · 12:10pm','−250 pts','warn','Failed'];
+    return head('Activity',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="card" style="padding:4px 14px">'+rows.map(function(r){
+      return '<div class="listrow"><div class="gr"><div class="t">'+r[0]+'</div><div class="d">'+r[1]+'</div></div><div style="text-align:right"><div class="small">'+r[2]+'</div>'+pill(r[4],r[3])+(r[3]==='warn'?' <button class="btn soft sm" style="width:auto;display:inline-flex;margin-top:6px" onclick="toast(\'Retrying…\')">Try again</button>':'')+'</div></div>';
+    }).join('')+'</div></div>';
+  },
+  tab:"activity", noHead:true
+};
+
+/* ---------- QUESTS ---------- */
+S.quests = {
+  flow:"quests", phase:"Engagement", step:"09 · Quests & Multipliers", id:"3.22",
+  title:"Panthers quests", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want a clear list of my team’s quests, so I know how to earn more and reach the next status.",
+  ac:["Each quest shows a points or multiplier value with a clear CTA.","Completed and locked states are distinct; locked quests state their requirement.","Higher status unlocks experience raffles and ticket perks."],
+  eng:"Quest config is team-driven. q2 needs external validation; q4 locked until Silver.",
+  ctas:["Tap quest → Quest detail / flow"],
+  prev:"3.19 / 3.20", next:"3.23 + action flows",
+  variants:[["Quest tier-locked","ev('questlock')"],["No quests configured","ev('noquests')"]],
+  body:function(){
+    var qs=[['Sign in this month','+50 pts','available','q1'],
+      ['Refer a fan','+200 pts','available','q3'],
+      ['Attend a home game','+500 pts','locked·external','q2'],
+      ['Vote on the new jersey','+75 pts','locked·Silver','q4']];
+    return head('Panthers quests',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<p class="p">Ways to earn points and multipliers with your team.</p>'+
+    '<div class="card" style="padding:4px 14px">'+qs.map(function(q){
+      var locked=q[2].indexOf('locked')===0;
+      return '<div class="listrow '+(locked?'locked':'')+'" onclick="'+(locked?'toast(\''+(q[2].indexOf('Silver')>0?'Reach Silver to unlock':'We’re verifying this activity')+'\',\'warn\')':'questOpen(\''+q[3]+'\')')+'"><div class="ic">'+(locked?'🔒':I.bolt)+'</div><div class="gr"><div class="t">'+q[0]+'</div><div class="d">'+(locked?q[2].replace('locked·',(q[2].indexOf('Silver')>0?'Reach Silver':'Needs verification')):'Tap to start')+'</div></div><div>'+pill(q[1],locked?'pend':'ok')+'</div></div>';
+    }).join('')+'</div>'+
+    '<div class="card" style="background:rgba(0,133,202,.08)"><div class="small">Higher status unlocks raffles for experiences and ticket-purchase perks.</div></div></div>';
+  },
+  tab:"quests", noHead:true
+};
+S.questDetail = {
+  flow:"quests", phase:"Engagement", step:"09 · Quest Detail", id:"3.23",
+  title:"Quest", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want each quest explained with a clear action, so I know exactly what to do to earn.",
+  ac:["Quest detail shows reward, requirement and a single CTA.","CTA routes to the relevant flow (e.g. referral, purchase).","Completion awards points or shows a pending/verifying state."],
+  eng:"Go to action routes to the matching flow; external quests award on confirmation.",
+  ctas:["Go to action → relevant flow"],
+  prev:"3.22 Quests", next:"relevant flow",
+  variants:[["External validation pending","ev('questpend')"]],
+  body:function(){
+    return head('',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="ic" style="width:64px;height:64px;border-radius:18px;background:var(--surf2);color:var(--accent2);display:flex;align-items:center;justify-content:center;margin:6px 0">'+I.bolt+'</div>'+
+    '<div class="h1">Refer a fan</div>'+pill('+200 pts','ok')+
+    '<p class="p" style="margin-top:14px">Invite a friend to NFL Wallet. When they finish setting up, you both get +5 tokens and you earn 200 points.</p>'+
+    '<div class="card"><div class="small muted">How it works</div><ol style="margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7"><li>Share your invite link</li><li>Friend creates an account</li><li>Points credit once they complete setup</li></ol></div>'+
+    btn('Go to referral',"go('referral')")+'</div>';
+  },
+  tab:"quests", noHead:true
+};
+
+/* ---------- REWARDS ---------- */
+S.raffle = {
+  flow:"rewards", phase:"Engagement", step:"—  · Raffle Entry", id:"3.25",
+  title:"Raffles", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want to spend points to enter raffles, so my points unlock real prizes.",
+  ac:["Each raffle shows prize, point cost per entry, your balance, max entries and dates.","Entry count is selectable; total cost validates against the available balance.","Insufficient points disables entry and routes to ways to earn."],
+  eng:"Confirm → available -= entries × cost; entry created. Closed raffles show ended state.",
+  ctas:["Confirm entry → success / receipt"],
+  prev:"3.19 Dashboard", next:"success / receipt",
+  variants:[["Insufficient points","ev('raffleInsuf')"],["Raffle closed","ev('raffleclosed')"]],
+  body:function(){
+    var insuf = state.e.raffleInsuf;
+    var cost = insuf?1000:250, n=state.raffleEntries, total=cost*n;
+    var afford = state.points.available>=total;
+    return head('Raffles',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="card tint"><div class="row"><div><div class="small muted">Prize</div><b>'+(insuf?'2 sideline passes':'Signed game jersey')+'</b></div>'+I.gift+'</div>'+
+    '<div class="row" style="margin-top:12px"><span class="muted small">Cost / entry</span><b>'+cost.toLocaleString()+' pts</b></div>'+
+    '<div class="row" style="margin-top:6px"><span class="muted small">Your points</span><b>'+state.points.available.toLocaleString()+'</b></div>'+
+    '<div class="row" style="margin-top:6px"><span class="muted small">Draws</span><b>Sep 22, 2026</b></div></div>'+
+    '<div class="card"><div class="row"><span class="muted">Entries</span>'+
+    '<div class="stepper" style="margin:0;gap:12px"><button onclick="raffleN(-1)">−</button><div class="val" style="font-size:24px;min-width:40px">'+n+'</div><button onclick="raffleN(1)">+</button></div></div>'+
+    '<div class="row" style="margin-top:10px;font-size:18px"><b>Total</b><b style="color:'+(afford?'var(--accent2)':'#ff8b78')+'">'+total.toLocaleString()+' pts</b></div></div>'+
+    (afford?'':'<div class="card" style="border-color:var(--warn)"><b style="color:#ff8b78">You need more points to enter</b><div class="small muted">'+(total-state.points.available).toLocaleString()+' pts short.</div><div style="height:10px"></div>'+btn('Earn more points',"go('quests')","soft sm")+'</div>')+
+    btn('Confirm entry · '+total.toLocaleString()+' pts',"raffleConfirm("+total+")"+'',afford?'':'')+'</div>';
+  },
+  tab:"raffle", noHead:true,
+  cta_disabled:true
+};
+S.tickets = {
+  flow:"rewards", phase:"Engagement", step:"—  · Tickets & Redemption", id:"3.26",
+  title:"Tickets", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want to buy tickets with cash or redeem with points, so I choose how I pay — like airline miles.",
+  ac:["Each event offers Pay with cash OR Redeem with points — never combined.","Cash purchases earn points; points redemptions deduct the points price.","Insufficient points disables redeem; sold-out events show a sold-out state."],
+  eng:"Cash → payment (3.15) + earn points · Points → available -= pointsPrice. Cash and points never combine.",
+  ctas:["Pay with cash / Redeem with points → confirmation"],
+  prev:"3.19 Dashboard", next:"confirmation",
+  variants:[["Insufficient points (redeem)","ev('ticketInsuf')"],["Tries to combine","ev('combine')"],["Sold out","ev('soldout')"]],
+  body:function(){
+    var t={ev:'Panthers vs Falcons',date:'Sep 21, 2026',cash:85,pts:8500,sold:state.e.soldout};
+    var canPts = state.points.available>=t.pts && !state.e.ticketInsuf;
+    return head('Tickets',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="card tint"><b style="font-size:17px">'+t.ev+'</b><div class="small muted">'+t.date+' · Bank of America Stadium</div>'+
+    (t.sold?'<div style="margin-top:12px">'+pill('Sold out','warn')+'</div>':
+     '<div class="row" style="margin-top:14px"><div><div class="small muted">Cash</div><b style="font-size:18px">$'+t.cash+'</b></div><div style="text-align:right"><div class="small muted">or points</div><b style="font-size:18px">'+t.pts.toLocaleString()+'</b></div></div>')+'</div>'+
+    (t.sold?'<p class="p">This game is sold out. Check other games.</p>':
+    '<div class="card" style="background:rgba(0,133,202,.08)'+(state.e.combine?';border-color:var(--warn)':'')+'"><div class="small">Cash and points can’t be combined. Choose one.</div>'+
+    (state.e.combine?'<div class="errmsg">You tried to use cash and points together — pick a single method to continue.</div>':'')+'</div>'+
+    btn('Pay with cash · $'+t.cash,"go('buy')","soft")+
+    '<div style="height:10px"></div>'+
+    (canPts?btn('Redeem with points · '+t.pts.toLocaleString(),"toast('Ticket confirmed');go('dashboard')")
+      :'<button class="btn" disabled>Redeem with points · '+t.pts.toLocaleString()+'</button><div class="errmsg" style="justify-content:center">You need '+(t.pts-state.points.available).toLocaleString()+' more points.</div>'+btn('Earn points',"go('quests')","ghost sm")))+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+S.voting = {
+  flow:"rewards", phase:"Engagement (secondary)", step:"—  · Voting", id:"3.27",
+  title:"Vote", skinTag:"Panthers", dynamicSkin:true,
+  story:"As an eligible fan, I want to vote on a simple team decision, so I have a light say without complexity.",
+  ac:["Voting unlocks at Silver tier and above; below Silver shows a locked card.","A simple two-option poll with previews, deadline and confirm.","Submitting without a selection shows an inline error; duplicate votes are blocked."],
+  eng:"Voting is deprioritised and lightweight — no governance or token-weight mechanics.",
+  ctas:["Confirm vote → Vote submitted"],
+  prev:"3.19 / 3.22", next:"Vote submitted",
+  variants:[["Below Silver (locked)","ev('voteLocked',true)"],["Unlock Silver (preview)","ev('voteLocked',false)"]],
+  body:function(){
+    var locked = !state.points.voting || state.e.voteLocked;
+    if(locked){
+      return head('Vote',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:60px;text-align:center">'+
+      '<div style="font-size:40px">🔒</div><div class="h1" style="margin-top:10px">Reach Silver to vote</div>'+
+      '<p class="p" style="max-width:240px;margin:8px auto 20px">Voting unlocks at Silver tier. Keep earning to get there.</p>'+
+      btn('Earn more points',"go('quests')")+'</div>';
+    }
+    var sel=state.vote;
+    return head('Vote',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="eyebrow">Closes Sep 30</div><div class="h1">2027 alternate<br>jersey</div>'+
+    [['a','Carolina Blue','#0085CA'],['b','Black Panther','#101820']].map(function(o){
+      var on=sel===o[0];
+      return '<div class="card" style="cursor:pointer;'+(on?'border-color:var(--accent2)':'')+'" onclick="voteSel(\''+o[0]+'\')"><div class="row"><div class="alloc-team" style="margin:0"><div class="lg" style="background:'+o[2]+'">  </div><b>'+o[1]+'</b></div>'+(on?pill('Selected','ok'):'')+'</div></div>';
+    }).join('')+
+    btn('Confirm vote',"voteConfirm()")+'</div>';
+  },
+  tab:"raffle", noHead:true
+};
+S.referral = {
+  flow:"rewards", phase:"Engagement", step:"—  · Referral", id:"3.24",
+  title:"Refer a fan", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want to invite friends and earn, so I grow the program and my points.",
+  ac:["A shareable link/code and reward explanation are shown.","Share opens the native sheet; copy confirms with a Copied pill.","Referrals are valid across teams; rewards credit once the friend qualifies."],
+  eng:"+5 tokens to both parties; reward pending until referred fan completes setup.",
+  ctas:["Invite a fan / Share / Copy"],
+  prev:"3.19 / 3.22", next:"Referral sent → reward",
+  variants:[["Friend joined (reward)","toast('Your friend joined · +5 tokens')"],["Link generation fail","ev('reflink')"]],
+  body:function(){
+    return head('Refer a fan',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="h1">Bring a fan,<br>both get +5</div>'+
+    '<p class="p">Share your link. When a friend finishes setup, you both get +5 tokens.</p>'+
+    '<div class="card"><div class="small muted">Your invite link</div><div class="row" style="margin-top:6px"><b>panthers.co/r/anna7k</b><button class="btn soft sm" style="width:auto" onclick="toast(\'Copied\')">Copy</button></div></div>'+
+    btn('Invite a fan',"shareSheet()")+
+    '<div class="card" style="margin-top:16px"><div class="small muted">Invited</div>'+
+    '<div class="listrow"><div class="ic">M</div><div class="gr"><div class="t">Marcus</div></div>'+pill('Joined','ok')+'</div>'+
+    '<div class="listrow"><div class="ic">D</div><div class="gr"><div class="t">Dana</div></div>'+pill('Pending','pend')+'</div></div></div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* ---------- BOOST ---------- */
+S.boost = {
+  flow:"boost", phase:"Loyalty", step:"08 · At-Game Boost", id:"3.21",
+  title:"Game-day boost", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan at a live game of my team, I want an automatic boosted multiplier, so buying and pledging at the game is rewarded.",
+  ac:["Boost triggers from location + venue when the pledged team is playing.","The multiplier applies only to tokens bought & pledged in the active window.","An active state and countdown are visible; the boost expires when the game ends."],
+  eng:"Buy & pledge at 3× → 3.13 carrying the boost flag. Expired → continue at normal rate.",
+  ctas:["Buy & pledge at 3× → Buy","Maybe later → Dashboard"],
+  prev:"3.19 / launch", next:"3.13 Buy (boost carried)",
+  variants:[["Boost expired","ev('boostExpired',true)"],["Location off","ev('boostloc')"],["Reset boost","ev('boostExpired',false)"]],
+  body:function(){
+    if(state.e.boostExpired){
+      return head('',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:70px;text-align:center">'+
+      '<div style="font-size:40px">⏱</div><div class="h1" style="margin-top:8px">This boost<br>has ended</div>'+
+      '<p class="p" style="max-width:240px;margin:8px auto 20px">The game-day window is closed. You can still buy and pledge at the normal rate.</p>'+
+      btn('Continue',"state.boost.active=false;go('buy')")+'</div>';
+    }
+    return head('',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:10px;text-align:center">'+
+    '<div>'+pill("⚡ You're at the game",'boost')+'</div>'+
+    '<div class="bignum" style="font-size:80px;color:#FF6A00;margin:18px 0 0">3×</div>'+
+    '<div class="h1">Boost unlocked</div>'+
+    '<p class="p" style="max-width:250px;margin:8px auto 6px">Tokens you buy and pledge during this game earn 3× points.</p>'+
+    '<div>'+pill('⏱ Active for 29:54','boost')+'</div>'+
+    '<div style="height:22px"></div>'+
+    btn('Buy &amp; pledge at 3×',"startBoost()","boost")+
+    '<div style="height:10px"></div>'+
+    btn('Maybe later',"go('dashboard')","ghost")+'</div>';
+  },
+  tab:"home", noHead:true
+};
+
+/* ---------- MANAGE ---------- */
+S.manage = {
+  flow:"manage", phase:"Management", step:"10 · Manage Pledge / Split", id:"3.28",
+  title:"Manage pledge", skinTag:"Panthers (→ alternate on change)", dynamicSkin:true,
+  story:"As a fan, I want to adjust how my tokens are pledged across teams, so I control my earning — knowing status is tracked per team.",
+  ac:["View current allocation and adjust a split that must always total 100%.","Each team shows its own points; a token supports one team at a time — no double-earning.","Changing primary team warns it updates the app skin and requires confirmation."],
+  eng:"Save (total=100%) → allocation updated → dashboard. Change team → warning → skin updates.",
+  ctas:["Save changes → Dashboard","Change team → warning → skin update"],
+  prev:"3.19 Dashboard", next:"confirmation / skin update",
+  variants:[["Allocation ≠ 100%","ev('alloc')"],["Save error","ev('saveErr')"],["Change primary team","changeTeamModal()"]],
+  body:function(){
+    var a=state.alloc, total=a.panthers+a.dolphins;
+    return head('Manage pledge',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<p class="p">50 tokens pledged. Split across teams — totals must equal 100%.</p>'+
+    '<div class="card"><div class="alloc-team"><div class="lg" style="background:#0085CA">CAR</div><div style="flex:1"><b>Carolina Panthers</b><div class="small muted">1,240 pts</div></div></div>'+
+    '<div class="row"><input type="range" min="0" max="100" value="'+a.panthers+'" oninput="allocSet(\'panthers\',this.value)"/><span class="alloc-pct">'+a.panthers+'%</span></div></div>'+
+    '<div class="card"><div class="alloc-team"><div class="lg" style="background:#008E97">MIA</div><div style="flex:1"><b>Miami Dolphins</b><div class="small muted">0 pts · tracked separately</div></div></div>'+
+    '<div class="row"><input type="range" min="0" max="100" value="'+a.dolphins+'" oninput="allocSet(\'dolphins\',this.value)"/><span class="alloc-pct">'+a.dolphins+'%</span></div></div>'+
+    '<div class="card" style="'+(total!==100?'border-color:var(--warn)':'')+'"><div class="row"><span class="muted">Total allocation</span><b style="color:'+(total===100?'var(--ok)':'#ff8b78')+'">'+total+'%</b></div>'+
+    (total!==100?'<div class="errmsg">Your allocation must total 100%.</div>':'')+'</div>'+
+    '<div class="card" style="background:rgba(0,133,202,.08)"><div class="small">Each token can only be pledged to one team. Points and status are tracked by team.</div></div>'+
+    btn('Save changes',"saveAlloc()")+
+    '<div style="height:10px"></div>'+
+    btn('Change primary team',"changeTeamModal()","ghost")+'</div>';
+  },
+  tab:"manage", noHead:true
+};
+
+/* ====================================================================== */
+/*  FLOW RAIL                                                              */
+/* ====================================================================== */
+var FLOWS = [
+  ["acquisition","Acquisition","00","scenario0"],
+  ["onboarding","Onboarding","01","splash"],
+  ["purchase","Purchase","04","home"],
+  ["team","Team Selection","05","location"],
+  ["pledge","Pledge","06","pledge"],
+  ["points","Points","07","dashboard"],
+  ["quests","Quests","09","quests"],
+  ["rewards","Rewards","—","raffle"],
+  ["boost","Boost","08","boost"],
+  ["manage","Manage","10","manage"]
+];
+function renderRail(){
+  var cur = S[state.screen] ? S[state.screen].flow : null;
+  document.getElementById('rail').innerHTML = FLOWS.map(function(f){
+    return '<button class="chip '+(f[0]===cur?'active':'')+'" onclick="goFlow(\''+f[3]+'\')"><span class="n">'+f[2]+'</span>'+f[1]+'</button>';
+  }).join('');
+}
+function goFlow(first){
+  // ensure pre-reqs so later flows render with sane data
+  if(["rewardLanding","loginGate","rewardPurchase","rewardUnlock","funded"].indexOf(first)>=0){ if(!state.acqTeam) state.acqTeam="carolina-panthers"; state.skin=teamSkin(state.acqTeam); }
+  if(["dashboard","quests","raffle","tickets","voting","referral","manage","boost"].indexOf(first)>=0 && !state.primaryTeam){ seedPledged(); }
+  go(first);
+}
+
+/* ====================================================================== */
+/*  ROUTER + RENDER                                                       */
+/* ====================================================================== */
+function phoneHTML(id, skin, onboarded, isStatic){
+  if(id==='scenario0'){ return '<div class="phoneoff" aria-hidden="true"><div class="notch"></div><div class="po-ico">\u23FB</div><div class="po-t">STANDBY</div></div>'; }
+  var sc=S[id]; if(!sc) return '';
+  var skinAttr = sc.flow && ["points","quests","rewards","boost","manage"].indexOf(sc.flow)>=0 && skin==="league" ? "league" : skin;
+  // screens that are inherently team-skinned render with current/given skin
+  var body = sc.noHead ? sc.body() : (head(sc.hideTitle?'':sc.title,{})+'<div class="screen">'+sc.body()+'</div>');
+  // some bodies include their own head + screen wrapper (noHead). For ones that don't:
+  if(!sc.noHead){ body = head(sc.hideTitle?'':sc.title,{})+'<div class="screen">'+sc.body()+'</div>'; }
+  var tabs = sc.tab ? tabbar(sc.tab) : '';
+  return '<div class="phone" data-skin="'+skin+'"'+(isStatic?' aria-hidden="true"':'')+'>'+
+    '<div class="notch"></div>'+statusBar()+ body + tabs +
+    (isStatic?'':'<div class="toasts" id="toasts"></div><div id="overlay"></div>')+'</div>';
+}
+function render(){
+  renderRail();
+  renderSkinToggle();
+  var hub=document.getElementById('scenhub');
+  if(state.screen==='scenario0'){
+    if(hub){ hub.style.display='block'; }
+    renderScenarioHub();
+    document.getElementById('prev').innerHTML='<div class="prevempty">Phone is off.<br>Select a scenario to boot.</div>';
+    document.getElementById('phone').innerHTML=phoneOff();
+    document.getElementById('panel').innerHTML=scenarioPanel();
+    window.scrollTo({top:0,behavior:'smooth'});
+    return;
+  }
+  if(hub){ hub.style.display='none'; }
+  // previous (faded) — always the logical happy-path predecessor of the CURRENT screen,
+  // not the literal screen the user was last on (which breaks when jumping via flow-rail/scenario chips)
+  var prevEl=document.getElementById('prev');
+  var prevId=happyPrev(state.screen);
+  if(prevId && S[prevId]){
+    prevEl.innerHTML='<div class="prevscale">'+phoneHTML(prevId,state.skin,state.onboarded,true)+'</div>';
+  } else {
+    prevEl.innerHTML='<div class="prevempty">No previous step yet.<br>This is the entry point.</div>';
+  }
+  // current
+  document.getElementById('phone').innerHTML=phoneHTML(state.screen,state.skin,state.onboarded,false);
+  // panel
+  document.getElementById('panel').innerHTML=panelHTML(S[state.screen]);
+}
+function panelHTML(sc){
+  if(!sc) return '';
+  var ac = sc.ac.map(function(x){return '<li><span class="ck">✓</span><span>'+x+'</span></li>';}).join('');
+  var ctas = sc.ctas.map(function(c){return '<span class="k">'+c+'</span>';}).join('');
+  var vars = sc.variants && sc.variants.length ?
+    '<div class="varbox"><div class="lab">Edge &amp; fallback states</div><div class="varbtns">'+
+    sc.variants.map(function(v){
+      var m=/ev\('(\w+)'(?:,\s*(true|false))?\)/.exec(v[1]);
+      var on = m ? (m[2]!==undefined ? (String(!!state.e[m[1]])===m[2]) : !!state.e[m[1]]) : false;
+      return '<button class="'+(on?'on':'')+'" onclick="'+v[1]+'">'+v[0]+'</button>';
+    }).join('')+'</div></div>' : '';
+  return '<div class="stepid">'+sc.step+'  ·  '+sc.id+'</div>'+
+    '<h2>'+sc.title+'</h2>'+
+    '<div class="skinrow"><span class="tag skin">Skin: '+(sc.dynamicSkin?activeTeamName():sc.skinTag)+'</span><span class="tag phase">'+sc.phase+'</span></div>'+
+    '<div class="story"><div class="lab">User story</div><p>'+sc.story+'</p></div>'+
+    '<div class="acc"><div class="lab">Acceptance criteria</div><ul>'+ac+'</ul></div>'+
+    '<dl class="metablock"><dt>CTAs</dt><dd>'+ctas+'</dd><dt>Prev</dt><dd>'+sc.prev+'</dd><dt>Next</dt><dd>'+sc.next+'</dd></dl>'+
+    '<div class="engnote"><b>Eng note:</b> '+sc.eng+'</div>'+
+    vars+
+    '<div class="navrow"><button onclick="back()" '+(state.history.length?'':'disabled')+'>◀ Back</button><button class="pri" onclick="advance()">Next happy step ▶</button></div>';
+}
+
+/* happy-path ordering for the panel Next button */
+var SPINE = ["splash","profile","otp","provisioning","home","buy","review","success","location","teamDetected","pledge","skinUnlock","dashboard","quests","questDetail","raffle","tickets","voting","boost","manage"];
+var ACQ_SPINE=["rewardLanding","loginGate","rewardPurchase","rewardUnlock","funded"];
+/* logical predecessor for screens that sit off the two main spines */
+var SPINE_PREV={signin:"splash",manualPicker:"location",waitlist:"manualPicker",tier:"dashboard",activity:"dashboard",referral:"dashboard"};
+function happyPrev(id){
+  var i=SPINE.indexOf(id);
+  if(i>0) return SPINE[i-1];
+  i=ACQ_SPINE.indexOf(id);
+  if(i>0) return ACQ_SPINE[i-1];
+  return SPINE_PREV[id]||null;
+}
+function advance(){
+  var a=ACQ_SPINE.indexOf(state.screen);
+  if(a>=0){ if(a<ACQ_SPINE.length-1){ go(ACQ_SPINE[a+1]); } else { go("dashboard"); } return; }
+  var i=SPINE.indexOf(state.screen);
+  if(i>=0 && i<SPINE.length-1){ var nxt=SPINE[i+1]; goFlow(nxt); }
+  else { go("dashboard"); }
+}
+
+function go(id){
+  if(!S[id]) return;
+  if(state.screen && state.screen!==id){
+    state.history.push({id:state.screen,skin:state.skin,onboarded:state.onboarded});
+    if(state.history.length>30) state.history.shift();
+  }
+  state.screen=id;
+  // reset transient edge flags that shouldn't persist across navigation
+  resetTransient(id);
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function back(){
+  if(!state.history.length) return;
+  var h=state.history.pop();
+  state.screen=h.id; state.skin=h.skin; state.onboarded=h.onboarded;
+  render();
+}
+function resetTransient(id){
+  // clear edge flags only for the screen being entered fresh via normal nav
+  var e=state.e;
+  if(id==='profile') e.reg=false;
+  if(id==='otp'){ e.otp=false; e.otpResend=false; }
+  if(id==='manualPicker'){ e.unsupported=false; e.noTeam=false; }
+}
+
+/* edge-flag setter from panel */
+function ev(flag,val){
+  /* every branch toggles state.e[flag] and returns — no flag may fall through to a second
+     toggle below, which previously canceled the first (e.g. nomethod/notokens/zeropts no-ops) */
+  if(flag==='offline'){ state.e.offline=!state.e.offline; if(state.e.offline) openModal('<b>You’re offline</b><p class="small muted">Connect to the internet to keep using NFL Wallet.</p><div class="navrow"><button class="pri" onclick="closeOverlay()">Try again</button></div>'); render(); return; }
+  if(flag==='refbanner'){ state.e.refbanner=!state.e.refbanner; if(state.e.refbanner) toast('You were invited to join NFL Wallet'); render(); return; }
+  if(flag==='dup'){ state.e.dup=!state.e.dup; if(state.e.dup) openModal('<b>Account already exists</b><p class="small muted">An account already exists with this email or phone.</p><div class="navrow"><button onclick="closeOverlay();go(\'signin\')">Sign in</button><button class="pri" onclick="closeOverlay()">Use different details</button></div>'); render(); return; }
+  if(flag==='notfound'){ state.e.notfound=!state.e.notfound; if(state.e.notfound) openModal('<b>No account found</b><p class="small muted">We couldn’t find an account with those details.</p><div class="navrow"><button onclick="closeOverlay();go(\'profile\')">Create account</button><button class="pri" onclick="closeOverlay()">Try again</button></div>'); render(); return; }
+  if(flag==='suspended'){ state.e.suspended=!state.e.suspended; if(state.e.suspended) openModal('<b>Account needs review</b><p class="small muted">Your account needs review before you can continue.</p><div class="navrow"><button class="pri" onclick="closeOverlay()">Contact support</button></div>'); render(); return; }
+  if(flag==='pending'){ state.e.pending=!state.e.pending; if(state.e.pending){ toast('Token purchase processing'); state.e.unpledged=false; } render(); return; }
+  if(flag==='nomethod'){ state.e.nomethod=!state.e.nomethod; render(); return; }
+  if(flag==='qty0'){ state.e.qty0=!state.e.qty0; state.qty=state.e.qty0?0:50; render(); return; }
+  if(flag==='credit'){ state.e.credit=!state.e.credit; if(state.e.credit) toast('Tokens will appear shortly'); render(); return; }
+  if(flag==='walletPending'){ state.e.walletPending=!state.e.walletPending; if(state.e.walletPending) toast('Setting up your wallet…'); render(); return; }
+  if(flag==='notokens'){ state.e.notokens=!state.e.notokens; render(); return; }
+  if(flag==='pledgefail'){ state.e.pledgefail=!state.e.pledgefail; render(); return; }
+  if(flag==='elsewhere'){ state.e.elsewhere=!state.e.elsewhere; if(state.e.elsewhere) openModal('<b>Add these tokens to Panthers?</b><p class="small muted">You already pledge to the Panthers. New tokens stay unpledged until confirmed.</p><div class="navrow"><button onclick="closeOverlay();go(\'manualPicker\')">Choose different team</button><button class="pri" onclick="closeOverlay();toast(\'Pledged to Panthers\')">Pledge to Panthers</button></div>'); render(); return; }
+  if(flag==='skinfail'){ state.e.skinfail=!state.e.skinfail; if(state.e.skinfail) toast('Showing static confirmation'); render(); return; }
+  if(flag==='zeropts'){ state.e.zeropts=!state.e.zeropts; render(); return; }
+  if(flag==='ptsdelay'){ state.e.ptsdelay=!state.e.ptsdelay; render(); return; }
+  if(flag==='benefits'){ state.e.benefits=!state.e.benefits; if(state.e.benefits) toast('More benefits coming soon'); render(); return; }
+  if(flag==='questlock'){ state.e.questlock=!state.e.questlock; if(state.e.questlock) toast('Reach Silver to unlock','warn'); render(); return; }
+  if(flag==='noquests'){ state.e.noquests=!state.e.noquests; if(state.e.noquests) toast('More ways to earn coming soon'); render(); return; }
+  if(flag==='questpend'){ state.e.questpend=!state.e.questpend; if(state.e.questpend) toast('We’re verifying this activity'); render(); return; }
+  if(flag==='raffleclosed'){ state.e.raffleclosed=!state.e.raffleclosed; if(state.e.raffleclosed) toast('This raffle has ended','warn'); render(); return; }
+  if(flag==='soldout'){ state.e.soldout=!state.e.soldout; render(); return; }
+  if(flag==='reflink'){ state.e.reflink=!state.e.reflink; if(state.e.reflink) toast('Couldn’t create invite link','warn'); render(); return; }
+  if(flag==='boostloc'){ state.e.boostloc=!state.e.boostloc; if(state.e.boostloc) openModal('<b>Enable location</b><p class="small muted">Enable location to check game-day boosts.</p><div class="navrow"><button onclick="closeOverlay()">Continue without</button><button class="pri" onclick="closeOverlay();allowLocation(true)">Enable</button></div>'); render(); return; }
+  if(flag==='noactivity'){ state.e.noactivity=!state.e.noactivity; render(); return; }
+  if(flag==='failed'){ state.e.failed=!state.e.failed; render(); return; }
+  // generic toggles (boolean-explicit pairs like voteLocked/boostExpired, and any other flag)
+  if(typeof val==='boolean'){ state.e[flag]=val; } else { state.e[flag]=!state.e[flag]; }
+  render();
+}
+
+/* ====================================================================== */
+/*  INTERACTION HANDLERS                                                   */
+/* ====================================================================== */
+function regSubmit(){
+  var n=(document.getElementById('rname')||{}).value||'';
+  var em=(document.getElementById('remail')||{}).value||'';
+  var ph=(document.getElementById('rphone')||{}).value||'';
+  var ok = n.trim() && /.+@.+\..+/.test(em) && ph.replace(/\D/g,'').length>=10;
+  if(!ok){ state.e.reg=true; render(); return; }
+  state.e.reg=false; go('otp');
+}
+function otpKey(e,i){
+  var v=e.target.value.replace(/\D/g,''); e.target.value=v.slice(-1);
+  if(v && i<3){ var nx=document.getElementById('otp'+(i+1)); if(nx) nx.focus(); }
+  var all=[0,1,2,3].every(function(j){var el=document.getElementById('otp'+j);return el&&el.value;});
+  if(all) setTimeout(otpVerify,150);
+}
+function otpVerify(){
+  if(state.e.otp){ render(); return; } // stays in error state until resend
+  go('provisioning');
+}
+function otpResend(){ state.e.otp=false; state.e.otpResend=false; toast('New code sent'); render(); }
+function signinAs(kind){
+  if(kind==='pledged'){ seedPledged(); go('dashboard'); }
+  else { state.wallet.unpledged=50; state.wallet.balance=50; state.e.unpledged=true; state.onboarded=false; go('home'); }
+}
+function setQty(delta,abs){
+  if(abs!==undefined){ state.qty=abs; } else { state.qty=Math.max(0,state.qty+delta); }
+  state.e.qty0 = state.qty<1; render();
+}
+function pickMethod(){
+  openSheet('<b>Payment method</b><div class="card" style="cursor:pointer" onclick="closeOverlay();toast(\'Apple Pay selected\')"><div class="row">Apple Pay · Panthers Visa •••• 6411 ✓</div></div><div class="card" style="cursor:pointer" onclick="closeOverlay()"><div class="row">Visa •••• 6411</div></div>');
+}
+function reviewGuard(){
+  if(state.qty<1){ state.e.qty0=true; render(); return; }
+  if(state.e.nomethod){ openSheet('<b>Add a payment method</b><p class="small muted">Add Apple Pay or a card to continue.</p>'+btn('Add payment method',"closeOverlay();state.e.nomethod=false;render();toast('Apple Pay added')")); return; }
+  go('review');
+}
+function openPay(){
+  var total=(state.qty*state.wallet.price).toFixed(2);
+  openSheet('<div class="applepay" style="border-radius:18px;padding:18px;text-align:center">'+
+    '<div style="font-weight:800;font-size:15px"> Pay</div>'+
+    '<div class="row" style="margin:14px 0;border-bottom:1px solid #2a2a2a;padding-bottom:12px"><span class="muted">NFL Wallet</span><b>$'+total+'</b></div>'+
+    '<div class="small" style="color:#9aa">Panthers Visa •••• 6411</div></div>'+
+    (state.e.pay?'<div class="errmsg" style="justify-content:center">Payment declined. Try another method.</div>':'')+
+    '<div style="height:12px"></div>'+
+    btn(state.e.pay?'Try again':'Pay $'+total,"confirmPay()")+
+    '<div style="height:8px"></div>'+
+    btn('Cancel',"closeOverlay();toast('Purchase canceled — no tokens bought','warn')","ghost"));
+}
+function confirmPay(){
+  if(state.e.pay){ closeOverlay(); toast('Payment declined','warn'); return; }
+  closeOverlay();
+  // settle tokens
+  state.wallet.balance += state.qty; state.wallet.unpledged += state.qty;
+  toast('Payment confirmed');
+  go('success');
+}
+function afterPurchase(){
+  if(state.primaryTeam){ // returning pledged buy → pledge additional, back to dashboard
+    state.wallet.pledged += state.wallet.unpledged; state.wallet.unpledged=0;
+    var b = state.boost.active && !state.boost.expired;
+    toast(b?'Boosted points added · 3×':'Tokens pledged');
+    go('dashboard');
+  } else {
+    go(state.team?'pledge':'location');
+  }
+}
+function allowLocation(fromBoost){
+  if(state.e.ambiguous){ go('teamDetected'); return; }
+  if(fromBoost){ state.boost.active=true; go('boost'); return; }
+  go('teamDetected');
+}
+function deny(kind){ state.e.loc=true; toast('No problem — choose your team manually'); go('manualPicker'); }
+function chooseTeam(id){ state.team=id; state.source='manual'; render(); }
+function searchTeam(v){ /* visual only in prototype */ }
+function confirmManual(){
+  if(!state.team){ state.e.noTeam=true; render(); return; }
+  go('pledge');
+}
+function confirmPledge(){
+  if(state.e.pledgefail){ toast('Couldn’t complete pledge — tokens safe','warn'); return; }
+  var team=state.team||'carolina-panthers';
+  state.primaryTeam=team;
+  var avail = state.wallet.unpledged||50, pct = state.pledgePct==null?100:state.pledgePct;
+  var toPledge = Math.max(1,Math.round(avail*pct/100));
+  state.wallet.pledged = toPledge; state.wallet.unpledged = avail-toPledge; if(!state.wallet.balance)state.wallet.balance=50;
+  state.skin = team==='miami-dolphins'?'dolphins':'panthers';
+  state.onboarded=true;
+  // initialise points (illustrative, internally consistent: Bronze, 62% to Silver)
+  state.points={ available:1240, lifetime:1550, tier:"Bronze", next:"Silver", prog:0.62, voting:false };
+  go('skinUnlock');
+}
+function seedPledged(){
+  state.primaryTeam='carolina-panthers'; state.team='carolina-panthers';
+  state.skin='panthers'; state.onboarded=true;
+  state.wallet={balance:50,unpledged:0,pledged:50,price:1};
+  state.points={ available:1240, lifetime:1550, tier:"Bronze", next:"Silver", prog:0.62, voting:false };
+}
+function questOpen(id){ if(id==='q3'){ go('questDetail'); } else if(id==='q1'){ toast('+50 pts earned'); } }
+function raffleN(d){ state.raffleEntries=Math.max(1,Math.min(10,state.raffleEntries+d)); render(); }
+function raffleConfirm(total){
+  if(state.points.available<total){ toast('You need more points','warn'); return; }
+  state.points.available-=total; toast('Raffle entered'); render();
+}
+function voteSel(o){ state.vote=o; render(); }
+function voteConfirm(){ if(!state.vote){ toast('Choose an option to vote','warn'); return; } toast('Vote submitted'); go('dashboard'); }
+function shareSheet(){ openSheet('<b>Invite a fan</b><div class="chiprow"><div class="qchip" onclick="closeOverlay();toast(\'Shared\')">Messages</div><div class="qchip" onclick="closeOverlay();toast(\'Link copied\')">Copy link</div><div class="qchip" onclick="closeOverlay();toast(\'Shared\')">More</div></div>'); }
+function startBoost(){ state.boost.active=true; state.boost.expired=false; go('buy'); }
+function allocSet(team,v){ state.alloc[team]=parseInt(v,10); render(); var el=document.querySelector('#phone .screen'); }
+function setPledgePct(v){ state.pledgePct=parseInt(v,10); render(); }
+function saveAlloc(){
+  var total=state.alloc.panthers+state.alloc.dolphins;
+  if(total!==100){ state.e.alloc=true; toast('Allocation must total 100%','warn'); render(); return; }
+  if(state.e.saveErr){ toast('We couldn’t save your changes','warn'); return; }
+  toast('Pledge updated');
+  if(state.alloc.dolphins>state.alloc.panthers){ state.skin='dolphins'; state.primaryTeam='miami-dolphins'; }
+  go('dashboard');
+}
+function changeTeamModal(){
+  openModal('<b>Change your primary team?</b><p class="small muted">Changing your primary team will update your app skin. Points and status are tracked by team and don’t transfer.</p>'+
+    '<div class="navrow"><button onclick="closeOverlay()">Cancel</button><button class="pri" onclick="closeOverlay();switchToDolphins()">Change to Dolphins</button></div>');
+}
+function switchToDolphins(){ state.skin='dolphins'; state.primaryTeam='miami-dolphins'; state.alloc={panthers:0,dolphins:100}; toast('Skin updated — Dolphins'); go('dashboard'); }
+
+/* ---- acquisition handlers (Task 1) ---- */
+function acqHow(){ openSheet('<b>How it works</b><p class="small muted">Buy '+acqT().abbr+' Tokens at $1 each. Your reward unlocks right after purchase, and your tokens stay in your wallet earning '+acqT().abbr+' points all season.</p>'+btn('Got it',"closeOverlay()")); }
+function acqLogin(method){
+  var msg = method==='team'?'Signed in with your team account':method==='tm'?'Ticketmaster identity matched':method==='passkey'?'Verified with passkey':method==='email'?'Email verified':'Phone verified';
+  toast(msg); go('rewardPurchase');
+}
+function setPack(v){ state.pack=v; render(); }
+function acqPay(){
+  if(state.e.pay){ openSheet('<div class="applepay" style="border-radius:18px;padding:18px;text-align:center"><div style="font-weight:800">Payment declined</div></div><div style="height:10px"></div>'+btn('Try another method',"closeOverlay();state.e.pay=false;render()")); return; }
+  openSheet('<div class="applepay" style="border-radius:18px;padding:18px;text-align:center">'+
+    '<div style="font-weight:800;font-size:15px">'+(state.e.apUnavail?'Card payment':' Pay')+'</div>'+
+    '<div class="row" style="margin:14px 0;border-bottom:1px solid #2a2a2a;padding-bottom:12px"><span class="muted">'+acqT().abbr+' Tokens</span><b>$'+state.pack.toFixed(2)+'</b></div>'+
+    '<div class="small" style="color:#9aa">'+(state.e.apUnavail?'Visa •••• 6411':'Apple Pay · Visa •••• 6411')+'</div></div>'+
+    '<div style="height:12px"></div>'+
+    btn('Pay $'+state.pack.toFixed(2),"acqConfirmPay()")+
+    '<div style="height:8px"></div>'+
+    btn('Cancel',"closeOverlay();toast('Purchase canceled','warn')","ghost"));
+}
+function acqConfirmPay(){
+  closeOverlay();
+  state.wallet.balance += state.pack; state.wallet.unpledged = 0; state.wallet.pledged = (state.wallet.pledged||0)+state.pack;
+  toast(state.e.boostPair?'Paid — boosted points earning':'Payment confirmed');
+  go('rewardUnlock');
+}
+function acqAgeGate(){ openModal('<b>Age verification</b><p class="small muted">This reward is age-restricted. Confirm you’re 21+ to redeem, or pick a non-alcohol alternative.</p><div class="navrow"><button onclick="closeOverlay();toast(\'Showing alternatives\')">Non-alcohol option</button><button class="pri" onclick="closeOverlay();toast(\'Verified 21+\')">I’m 21+</button></div>'); }
+function acqHandoff(){
+  var team=state.acqTeam||'carolina-panthers';
+  state.primaryTeam=team; state.team=team; state.skin=teamSkin(team); state.onboarded=true;
+  if(!state.points || !state.points.available){ state.points={ available:1240, lifetime:1550, tier:"Bronze", next:"Silver", prog:0.62, voting:false }; }
+  go('funded');
+}
+function acqDash(){
+  // The rich team dashboard is Panthers-templated in this build; route Panthers cleanly.
+  if((state.acqTeam||'carolina-panthers')==='carolina-panthers'){ seedPledged(); go('dashboard'); }
+  else { toast('Full dashboard is Panthers-only in this build'); }
+}
+function acqReauth(){ openSheet('<b>Confirm it’s you</b><p class="small muted">Your session expired. Re-authenticate to view your wallet.</p>'+btn('Use Face ID',"closeOverlay();toast('Welcome back')")); }
+function goWaitlist(){ state.skin='league'; go('waitlist'); }
+function joinWaitlist(){ toast('You’re on the list — we’ll let you know'); }
+function acqContinueNeutral(){ state.skin='league'; state.acqScenario=null; go('home'); }
+
+/* ====================================================================== */
+/*  TASK 2 — SCENARIO SELECTOR (SCREEN 0)  ·  TASK 3 — MANUAL SKIN         */
+/*  Content sourced verbatim from NFL Fan Wallet Acquisition Scenarios.    */
+/* ====================================================================== */
+S.scenario0 = { flow:"acquisition" }; /* router marker only — rendered in studio, not the phone */
+
+var SCEN = {
+  L1:{
+    tag:"Layer 1", title:"Team-context · Reward-first", now:"Hero acquisition",
+    core:"Fan enters from a team-specific campaign surface (stadium / seatback / concessions QR, website banner, email/SMS, push, partner or merch placement, game-day promo). Always reward-first: the fan wants the reward, boost or perk — tokens are framed as the mechanism that unlocks it.",
+    best:"Stadium conversion · game-day activation · cold-start & casual fans · reward-driven users · seatback/signage/concessions campaigns · team-website, social, email & SMS traffic.",
+    target:"Fans at the stadium · fans clicking a digital promo at home · team-website visitors · fans without the team app · fans new to fan tokens · casual fans chasing perks · returning fans responding to a reward or boost.",
+    scenarios:[
+      {id:"s1",n:"1",label:"Reward-first team QR / promo / banner",route:"rewardLanding",team:true,
+        core:"Fan scans/taps a team campaign to claim a reward; wallet and token purchase are framed as the path to unlock that reward.",
+        best:"Highest-frequency acquisition; stadium and digital campaigns.",
+        target:"Cold-start fans, casual fans, stadium attendees, web visitors."},
+      {id:"s2",n:"2",label:"Game-day boost activation",route:"rewardLanding",team:true,boost:true,
+        core:"Fan is at an eligible game/event; buying and pledging during the active window earns boosted points.",
+        best:"Urgency, repeat purchases, in-stadium conversion.",
+        target:"Stadium fans, returning users, high-intent game-day users."},
+      {id:"s3",n:"3",label:"Reward redemption / voucher claim",route:"rewardUnlock",team:true,
+        core:"Fan completes purchase/activation and receives a scannable reward, e.g. beer, merch discount, food voucher, sweepstakes entry.",
+        best:"Immediate payoff and trust-building.",
+        target:"Reward-motivated fans, first-time users."},
+      {id:"s4",n:"4",label:"Returning fan reward / top-up loop",route:"funded",team:true,
+        core:"Existing wallet user scans a new QR or taps a new promo and lands in wallet with current balance, today's reward, and top-up options.",
+        best:"Repeat engagement.",
+        target:"Existing token holders, returning stadium fans."},
+      {id:"s5",n:"5",label:"Referral / viral reward loop",route:"splash",team:false,
+        core:"Fan shares an invite; both referrer and invitee earn bonus tokens/points/reward eligibility. The referred fan lands on standard onboarding (3.1) to create their own account.",
+        best:"Fan-to-fan growth.",
+        target:"Social fans, groups attending together, watch-party users."}
+    ]
+  },
+  L2:{
+    tag:"Layer 2", title:"Team-app · Logged-in fan", now:"Highest identity confidence",
+    core:"Fan is already inside the team's digital environment — the highest-trust, highest-identity layer. The wallet appears as a module / SDK / native surface / webview inside team-app home, member hub, ticketing, mobile wallet, game-day guide, rewards page, push, or Account Manager. The funnel is shorter because the app already knows the user.",
+    best:"Existing fans · app users · Season Ticket Members · PSL owners · ticket holders · fans with known identity · repeat engagement.",
+    target:"Logged-in team-app users · STMs · PSL owners · premium members · mobile-ticket users · Ticketmaster-linked accounts · existing rewards/loyalty members.",
+    scenarios:[
+      {id:"s5",n:"5",label:"Team-app banner / in-app campaign card",route:"rewardPurchase",team:true,
+        core:"Logged-in fan taps an in-app card and goes directly to reward/purchase/wallet.",
+        best:"Low-friction conversion.",
+        target:"Existing app users."},
+      {id:"s6",n:"6",label:"Ticketing / mobile-ticket identity activation",route:"loginGate",team:true,
+        core:"Fan enters through mobile tickets or Account Manager; token offer uses Ticketmaster/team identity.",
+        best:"Strong identity matching and game-day relevance.",
+        target:"Ticket holders, STMs, PSL owners."},
+      {id:"s7",n:"7",label:"Member / loyalty hub activation",route:"funded",team:true,
+        core:"Fan discovers wallet inside existing benefits, rewards, or member hub.",
+        best:"High-value fan segmentation.",
+        target:"STMs, premium members, existing loyalty users."},
+      {id:"s8",n:"8",label:"Team-specific quests / ongoing engagement",route:"quests",team:true,
+        core:"Wallet becomes part of team loyalty loop after onboarding.",
+        best:"Retention.",
+        target:"Existing wallet users and engaged fans."}
+    ]
+  },
+  L3:{
+    tag:"Layer 3", title:"NFL-level · Standard wallet", now:"Fallback / league-level",
+    core:"The neutral, league-level path — used when there's no team campaign, no team-app context, and no reward-first entry. The main NFL Fan Wallet onboarding is already described in the NFL User Flows; this stays the fallback, not the hero path.",
+    best:"General NFL app users · NFL.com visitors · users outside stadium context · users without a pilot team app · broad league-level marketing · users who want to browse/select a team manually.",
+    target:"General NFL fans · fans outside the five pilot markets · fans whose team isn't yet supported · users not entering from a campaign · users who intentionally search for NFL Fan Wallet.",
+    scenarios:[
+      {id:"s9",n:"9",label:"Main NFL app / Fan Wallet onboarding",route:"splash",team:false,
+        core:"Neutral League flow: create account, buy tokens, detect/select team, pledge, unlock team skin. Already documented in NFL User Flows.",
+        best:"Standard fallback.",
+        target:"General NFL audience."},
+      {id:"s10",n:"10",label:"Unsupported-team / waitlist path",route:"waitlist",team:false,
+        core:"Fan selects a non-pilot team; system offers waitlist or pilot-team selection.",
+        best:"Managing pilot limitations.",
+        target:"Fans of non-pilot teams."},
+      {id:"s11",n:"11",label:"Manual team selection / location fallback",route:"location",team:false,
+        core:"User selects from available teams if no team context exists or location is denied.",
+        best:"Neutral onboarding resilience.",
+        target:"Users outside campaign context."}
+    ]
+  }
+};
+
+/* ---- Task 3 manual skin map (skin <-> team id) ---- */
+var SKIN_TEAM={league:null,panthers:"carolina-panthers",dolphins:"miami-dolphins",patriots:"new-england-patriots",eagles:"philadelphia-eagles",niners:"san-francisco-49ers"};
+var SKIN_LIST=[
+  ["league","Neutral League","NFL","linear-gradient(135deg,#1C222B,#0B0E12)"],
+  ["panthers","Panthers","CAR","#0085CA"],
+  ["patriots","Patriots","NE","#C60C30"],
+  ["eagles","Eagles","PHI","#006B75"],
+  ["niners","49ers","SF","#AA0000"],
+  ["dolphins","Dolphins","MIA","#008E97"]
+];
+function activeTeamName(){ var t=SKIN_TEAM[state.skin]; return t?TEAMS[t].name:"Neutral League"; }
+function activeTeamAbbr(){ var t=SKIN_TEAM[state.skin]; return t?TEAMS[t].abbr:"NFL"; }
+function activeTeamColor(){ var t=SKIN_TEAM[state.skin]; return t?TEAMS[t].c:"#1C222B"; }
+
+function renderSkinToggle(){
+  var el=document.getElementById("skintoggle"); if(!el) return;
+  el.innerHTML=SKIN_LIST.map(function(s){
+    var on=state.skin===s[0];
+    return '<button class="skinbtn'+(on?' on':'')+'" onclick="setManualSkin(\''+s[0]+'\')" title="'+s[1]+'">'+
+      '<span class="dotc" style="background:'+s[3]+'"></span>'+s[1]+'</button>';
+  }).join("");
+  var at=document.getElementById("activeteam"); if(at) at.textContent=activeTeamName();
+}
+/* manual override — swaps phone data-skin (CSS vars) + rebinds team name app-wide */
+function setManualSkin(skin){
+  state.skin=skin; state.manualSkin=(skin!=="league");
+  var tid=SKIN_TEAM[skin];
+  if(tid){ state.acqTeam=tid; state.team=tid; state.primaryTeam=tid; }
+  render();
+}
+
+/* ---- Scenario hub (Screen 0) ---- */
+function scenFind(k,id){ var a=SCEN[k].scenarios,i; for(i=0;i<a.length;i++){ if(a[i].id===id) return a[i]; } return null; }
+function renderScenarioHub(){
+  var hub=document.getElementById("scenhub"); if(!hub) return;
+  var head='<div class="scenhub-head"><div>'+
+    '<h2>Select Acquisition Scenario</h2>'+
+    '<p class="sh-sub">Screen 0 — choose an onboarding layer and scenario. Hover a scenario to preview it; click to apply its team skin and boot the prototype into that flow\u2019s first screen.</p></div>'+
+    '<div class="scenhub-team"><span class="dotc" style="background:'+activeTeamColor()+'"></span>Team-specific scenarios use: '+activeTeamName()+'</div></div>';
+  var cards=["L1","L2","L3"].map(function(k){
+    var L=SCEN[k];
+    var btns=L.scenarios.map(function(s){
+      return '<button class="scenbtn" data-team="'+(s.team?1:0)+'" '+
+        'onmouseover="scenHover(\''+k+'\',\''+s.id+'\')" onmouseout="scenReset(\''+k+'\')" '+
+        'onclick="launchScenario(\''+k+'\',\''+s.id+'\')">'+
+        '<span class="sn">'+s.n+'</span><span class="sl">'+s.label+'</span>'+
+        '<span class="sr">'+(s.team?"team skin":"neutral")+' \u2192</span></button>';
+    }).join("");
+    return '<div class="layercard">'+
+      '<div class="lc-tag">'+L.tag+'</div>'+
+      '<div class="lc-title">'+L.title+'</div>'+
+      '<div class="lc-now">'+L.now+'</div>'+
+      '<div class="lc-body">'+
+        '<div class="lc-scenarios">'+
+          '<div class="lc-scenlab" id="f-'+k+'-name">Scenarios in this layer · hover to preview</div>'+
+          '<div class="scenbtns">'+btns+'</div>'+
+        '</div>'+
+        '<div class="lc-fields">'+
+          '<div class="lc-field"><div class="fl">Core idea</div><div class="fv" id="f-'+k+'-core">'+L.core+'</div></div>'+
+          '<div class="lc-field"><div class="fl">Best for</div><div class="fv" id="f-'+k+'-best">'+L.best+'</div></div>'+
+          '<div class="lc-field"><div class="fl">Target users</div><div class="fv" id="f-'+k+'-target">'+L.target+'</div></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join("");
+  hub.innerHTML=head+'<div class="layergrid">'+cards+'</div>';
+}
+function scenHover(k,id){
+  var s=scenFind(k,id); if(!s) return;
+  var c=document.getElementById("f-"+k+"-core"); if(c) c.textContent=s.core;
+  var b=document.getElementById("f-"+k+"-best"); if(b) b.textContent=s.best;
+  var t=document.getElementById("f-"+k+"-target"); if(t) t.textContent=s.target;
+  var n=document.getElementById("f-"+k+"-name"); if(n) n.textContent="Scenario "+s.n+" · "+s.label;
+}
+function scenReset(k){
+  var L=SCEN[k];
+  var c=document.getElementById("f-"+k+"-core"); if(c) c.textContent=L.core;
+  var b=document.getElementById("f-"+k+"-best"); if(b) b.textContent=L.best;
+  var t=document.getElementById("f-"+k+"-target"); if(t) t.textContent=L.target;
+  var n=document.getElementById("f-"+k+"-name"); if(n) n.textContent="Scenarios in this layer · hover to preview";
+}
+function launchScenario(k,id){
+  var s=scenFind(k,id); if(!s) return;
+  state.acqLayer=k; state.activeScenarioId=id; state.acqScenario=id;
+  state.e.boostPair = !!s.boost;
+  if(s.team){
+    if(!state.acqTeam || teamSkin(state.acqTeam)==="league"){ state.acqTeam="carolina-panthers"; }
+    state.skin=teamSkin(state.acqTeam);
+  } else {
+    state.skin="league";
+  }
+  goFlow(s.route);
+  /* re-assert chosen team skin if a prereq seeder (e.g. seedPledged) defaulted Panthers */
+  if(s.team){ state.skin=teamSkin(state.acqTeam); render(); }
+}
+function phoneOff(){
+  return '<div class="phoneoff"><div class="notch"></div>'+
+    '<div class="po-ico">\u23FB</div>'+
+    '<div class="po-t">PROTOTYPE STANDBY</div>'+
+    '<div class="po-s">Pick a scenario above to boot the phone into that flow.</div></div>';
+}
+function scenarioPanel(){
+  return '<div class="stepid">SCREEN 0 · DEV MENU</div>'+
+    '<h2>Acquisition scenario selector</h2>'+
+    '<div class="skinrow"><span class="tag skin">Skin: set on launch</span><span class="tag phase">Entry · pre-boot</span></div>'+
+    '<div class="story"><div class="lab">Purpose</div><p>Choose which acquisition layer and scenario to demo. Each scenario sets its parameters, applies the matching team skin, and boots the phone into that flow\u2019s first screen.</p></div>'+
+    '<div class="acc"><div class="lab">How it works</div><ul>'+
+      '<li><span class="ck">\u2713</span><span>3 layers from the Acquisition Scenarios doc — reward-first, team-app, NFL-level.</span></li>'+
+      '<li><span class="ck">\u2713</span><span>Hover a scenario to preview its core idea, best-for and target users.</span></li>'+
+      '<li><span class="ck">\u2713</span><span>Team-specific scenarios use the team set in the manual skin toggle (default Panthers).</span></li>'+
+    '</ul></div>'+
+    '<div class="engnote"><b>Eng note:</b> launchScenario() → state params + teamSkin() → goFlow(firstScreen). Routing follows each scenario\u2019s happy path in the scenarios doc.</div>';
+}
+
+/* ====================================================================== */
+/*  COVERAGE / ASSUMPTIONS                                                 */
+/* ====================================================================== */
+var COV = {
+  conf:["Splash / account entry (3.1)","Profile + OTP (3.2–3.3)","Wallet provisioning (3.4)","Returning sign-in (3.5)","Home empty + unpledged (3.12)","Buy tokens $1, chips 10/50/100 (3.13)","Review + Apple Pay sheet (3.14–3.15)","Purchase success (3.16)","Location + Team Detected (3.7–3.8)","Manual picker + unsupported (3.10)","Pledge + skin unlock (3.17–3.18)","Points dashboard + tiers (3.19–3.20)","Game-day 3× boost + loop (3.21)","Quests + detail (3.22–3.23)","Referral (3.24)","Raffle entry + insufficient (3.25)","Tickets cash/points, no-combine (3.26)","Voting + Silver lock (3.27)","Manage split 100% + change team (3.28)","Activity / history (3.29)","All required edge/fallback states","Reward-first acquisition spine (3.39→3.43)","Login gate / identity checkpoint (3.40)","Returning / funded team wallet (3.47)","Unsupported-team waitlist (3.48)","5-team skin tokens: Panthers·Dolphins·Eagles·49ers·Patriots"],
+  assm:["Points init Bronze · 1,550 lifetime · 62%→Silver (reconciles source tier:Bronze with progressToNext:0.62; source value 1240 available kept)","Cohort search teams Falcons/Saints added for picker realism","Tab set: Home·Quests·Rewards·Manage·Activity (labels refinable per §0.3)","Boost countdown shown static (29:54) — non-functional timer","Edge states surfaced via panel buttons rather than a separate dev console","Reward shown as a labeled placeholder — no per-team reward exists in source","Color hierarchy mapped onto the existing dark canvas: team accent→--accent, team primary→hero gradient (zero-regression)","Acquisition demo defaults to Panthers; all teams hand off into the 3.47 funded wallet","Token packs $10/$25/$50 ($25 default) on the reward-framed purchase, per §0.3","Screen 0 scenario selector routes each scenario to its first screen per the doc's happy paths: S1→reward landing (3.39), S2→reward landing+3× boost, S3→reward unlock (3.43), S4/S7→funded wallet (3.47), S5(L1)→referral (3.24), S5(L2)→reward-framed purchase (3.42), S6→login gate (3.40), S8→quests (3.22), S9→splash (3.1), S10→waitlist (3.48), S11→location (3.7)","Manual skin toggle + team-specific scenarios bind the active team name app-wide via acqTeam/acqT(); legacy Panthers-templated screens (dashboard/quests/manage/boost) recolor by skin but keep Panthers labels — non-Panthers rich screens remain out of scope","Team-specific scenarios default to Panthers when no team is set in the toggle"],
+  need:["Boost rule: applies at purchase, pledge, or both? (§Flow 13 EC4 flagged)","Multi-team split shipping in beta? (§0.4 / Flow 19 — prototype shows split + change-team)","Final tier names beyond Bronze→Platinum (Diamond?)","Referral qualification condition (signup vs first purchase)","Points-earn formula per token / per action (intentionally not surfaced)","Age-gate handling for in-stadium beer voucher (E-3.37b)","Per-team reward names, values & voucher artwork","Rich team dashboard parametrization for non-Panthers teams (out of Task 1 scope)"],
+  excl:["Panthers In-Stadium A/B/R module (3.31–3.38) — source flags non-shipping scaffolding","Demo-shell / side-by-side presentation layer (Flow 0)","Crypto/staking/contract/score surfaces (§0.2 out of scope)","Operator/admin dashboards (§0.4 out of scope)"]
+};
+function renderCov(){
+  function col(t,cls,arr){ return '<div class="cov-col"><h4><i class="dot '+cls+'"></i>'+t+' ('+arr.length+')</h4><ul>'+arr.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></div>'; }
+  document.getElementById('covgrid').innerHTML =
+    col('Built · confirmed','d-conf',COV.conf)+col('Built · assumptions','d-assm',COV.assm)+
+    col('Needs input','d-need',COV.need)+col('Excluded','d-excl',COV.excl);
+}
+
+/* ====================================================================== */
+/*  BOOT                                                                   */
+/* ====================================================================== */
+renderCov();
+render();
+</script>
+</body>
+</html>
