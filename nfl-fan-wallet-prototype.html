@@ -45,11 +45,15 @@ html,body{margin:0}
 body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
 
 /* ============================ STUDIO LAYOUT ============================ */
-.topbar{padding:22px 30px 14px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;border-bottom:1px solid var(--rule)}
-.brandline{font-size:11px;letter-spacing:.22em;color:var(--hint);font-weight:700;text-transform:uppercase;margin-bottom:8px}
-.headline{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.04;letter-spacing:-.01em;text-transform:uppercase;max-width:560px}
-.sub{font-size:13px;color:var(--ink2);max-width:560px;margin-top:8px;line-height:1.5}
-.skinlegend{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--sh1);min-width:230px}
+.topbar{padding:22px 30px 16px;border-bottom:1px solid var(--rule)}
+.brandline{font-size:11px;letter-spacing:.22em;color:var(--hint);font-weight:700;text-transform:uppercase;margin-bottom:12px}
+.topbar-row{display:flex;align-items:stretch;gap:22px;flex-wrap:wrap}
+.topbar-intro{flex:1 1 340px;min-width:280px;max-width:560px}
+.headline{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.04;letter-spacing:-.01em;text-transform:uppercase;margin:0}
+.sub{font-size:13px;color:var(--ink2);margin-top:12px;line-height:1.5}
+.skinlegend{background:var(--paper);border:1px solid var(--rule);border-radius:var(--r2);padding:12px 14px;box-shadow:var(--sh1);
+  display:flex;flex-direction:column;flex:0 0 auto;width:272px}
+.skinlegend.coreflow{flex:1 1 300px;width:auto;min-width:300px}
 .skinlegend .lt{font-size:10px;letter-spacing:.18em;color:var(--hint);font-weight:700;text-transform:uppercase;margin-bottom:8px}
 .swatches{display:flex;gap:8px}
 .swatch{flex:1;border-radius:10px;height:34px;display:flex;align-items:flex-end;padding:5px 7px;font-size:9px;font-weight:700;color:#fff;letter-spacing:.04em}
@@ -57,8 +61,8 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 .swatch.sp{background:linear-gradient(135deg,#0085CA,#06121C)}
 .swatch.sd{background:linear-gradient(135deg,#008E97,#04181A)}
 
-/* flow rail */
-.rail{display:flex;gap:8px;overflow-x:auto;padding:14px 30px;border-bottom:1px solid var(--rule);background:var(--paper)}
+/* flow rail (now lives inside the 'core flow steps' header card) */
+.rail{display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start}
 .chip{flex:0 0 auto;border:1px solid var(--rule);background:var(--studio);color:var(--ink2);border-radius:999px;
   padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:.12s}
 .chip:hover{border-color:#B9C0C9}
@@ -271,15 +275,15 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 .map-link.cur{color:var(--ink);font-weight:800;background:var(--story)}
 
 /* ============================ TASK 3 — MANUAL SKIN TOGGLE ============================ */
-.skintoggle{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:2px 0 8px}
-.skinbtn{border:1px solid var(--rule);background:var(--studio);border-radius:9px;padding:7px 6px;cursor:pointer;display:flex;
-  align-items:center;gap:7px;font-size:11px;font-weight:800;color:var(--ink2);letter-spacing:.02em;transition:.12s;text-align:left}
+.skintoggle{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:0 0 6px}
+.skinbtn{border:1px solid var(--rule);background:var(--studio);border-radius:9px;padding:6px 5px;cursor:pointer;display:flex;
+  align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:var(--ink2);letter-spacing:.01em;transition:.12s;text-align:left;white-space:nowrap}
 .skinbtn:hover{border-color:#B9C0C9}
-.skinbtn .dotc{width:13px;height:13px;border-radius:4px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.skinbtn .dotc{width:11px;height:11px;border-radius:4px;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
 .skinbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .skinbtn.on .dotc{box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}
 .activeteam-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:2px;
-  border-top:1px solid var(--rule);padding-top:8px}
+  border-top:1px solid var(--rule);padding-top:7px}
 .activeteam-row .lbl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--hint);font-weight:800}
 .activeteam-row .val{font-size:12px;font-weight:800;color:var(--ink)}
 
@@ -297,14 +301,19 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 .layercard .lc-title{font-family:var(--display);font-weight:800;font-size:17px;text-transform:uppercase;letter-spacing:-.005em;margin:5px 0 2px;line-height:1.1}
 .lc-now{font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--accent2);background:rgba(200,162,75,.14);
   color:#9a7b1e;border-radius:6px;padding:3px 7px;display:inline-block;margin:6px 0 2px}
-/* horizontal layer body: scenarios list left, core idea + best-for + target-users right */
-.lc-body{display:grid;grid-template-columns:240px 1fr;gap:24px;margin-top:12px}
+/* horizontal layer body: scenarios list left (stretched to fit names), core idea + best/target right */
+.lc-body{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px;margin-top:12px}
 @media(max-width:760px){.lc-body{grid-template-columns:1fr}}
 .lc-scenarios{display:flex;flex-direction:column;min-width:0}
-.lc-fields{margin:0;display:flex;flex-direction:column;gap:9px;min-width:0;border-left:1px solid var(--rule);padding-left:22px}
+.lc-fields{margin:0;display:flex;flex-direction:column;gap:12px;min-width:0;border-left:1px solid var(--rule);padding-left:22px}
 @media(max-width:760px){.lc-fields{border-left:none;padding-left:0;border-top:1px solid var(--rule);padding-top:12px}}
 .lc-field .fl{font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--hint);margin-bottom:3px}
 .lc-field .fv{font-size:12.5px;line-height:1.45;color:var(--ink2)}
+/* best-for + target-users side-by-side, below the core idea */
+.lc-field2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:760px){.lc-field2{grid-template-columns:1fr}}
+.fbul{list-style:disc;margin:5px 0 0;padding-left:16px}
+.fbul li{font-size:12px;line-height:1.4;color:var(--ink2);margin:2px 0}
 .lc-scenlab{font-size:9px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--hint);margin-bottom:8px}
 .scenbtns{display:flex;flex-direction:column;gap:7px;margin-top:0}
 .scenbtn{border:1px solid var(--rule);background:var(--studio);border-radius:10px;padding:10px 12px;cursor:pointer;
@@ -329,20 +338,24 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 <body>
 
 <header class="topbar">
-  <div>
-    <div class="brandline">NFL Fan Wallet · Engineering Walkthrough · Clickable Prototype</div>
-    <h1 class="headline">Buy a token.<br>Pledge to your team.<br>Earn points all season.</h1>
-    <p class="sub">Tap through the live phone frame. The panel on the right documents each screen; the faded frame on the left is the previous step in the flow. Flow chips above jump to the first screen of each journey. Edge &amp; fallback states are reachable from the panel.</p>
-  </div>
-  <div class="skinlegend">
-    <div class="lt">The skin system · manual override</div>
-    <div class="skintoggle" id="skintoggle"></div>
-    <div class="activeteam-row"><span class="lbl">Active skin</span><span class="val" id="activeteam">Neutral League</span></div>
-    <p style="font-size:11px;color:var(--hint);margin:9px 0 0;line-height:1.4">App opens neutral. Pledging tokens — or this toggle — swaps the team skin app-wide.</p>
+  <div class="brandline">NFL Fan Wallet · Engineering Walkthrough · Clickable Prototype</div>
+  <div class="topbar-row">
+    <div class="topbar-intro">
+      <h1 class="headline">Buy a token.<br>Pledge to your team.<br>Earn points all season.</h1>
+      <p class="sub">Tap through the live phone frame. The panel on the right documents each screen; the faded frame on the left is the previous step in the flow. Flow chips above jump to the first screen of each journey. Edge &amp; fallback states are reachable from the panel.</p>
+    </div>
+    <div class="skinlegend coreflow">
+      <div class="lt">core flow steps</div>
+      <nav class="rail" id="rail"></nav>
+    </div>
+    <div class="skinlegend">
+      <div class="lt">The skin system · manual override</div>
+      <div class="skintoggle" id="skintoggle"></div>
+      <div class="activeteam-row"><span class="lbl">Active skin</span><span class="val" id="activeteam">Neutral League</span></div>
+      <p style="font-size:11px;color:var(--hint);margin:7px 0 0;line-height:1.4">App opens neutral. Pledging tokens — or this toggle — swaps the team skin app-wide.</p>
+    </div>
   </div>
 </header>
-
-<nav class="rail" id="rail"></nav>
 
 <section class="scenariohub" id="scenhub" style="display:none"></section>
 
@@ -351,6 +364,16 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
   <div id="phone"></div>
   <aside class="panel" id="panel"></aside>
 </main>
+
+<section class="coverage">
+  <button class="cov-toggle" onclick="document.getElementById('mapbody').classList.toggle('open')">
+    Clickable Prototype Map <span style="color:var(--hint);font-weight:700;font-size:12px">tap to expand ▾</span>
+  </button>
+  <div class="cov-body" id="mapbody">
+    <p style="font-size:12px;color:var(--hint);margin:10px 0 0">Every screen, grouped by section. Tap a section to fold it open, then tap a screen to load it in the phone above.</p>
+    <div class="mapgrid" id="mapgrid"></div>
+  </div>
+</section>
 
 <section class="coverage">
   <button class="cov-toggle" onclick="document.getElementById('covbody').classList.toggle('open')">
@@ -364,16 +387,6 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
       <span><i class="dot d-excl"></i> Excluded — deprioritised in source</span>
     </div>
     <div class="cov-grid" id="covgrid"></div>
-  </div>
-</section>
-
-<section class="coverage">
-  <button class="cov-toggle" onclick="document.getElementById('mapbody').classList.toggle('open')">
-    Clickable Prototype Map <span style="color:var(--hint);font-weight:700;font-size:12px">tap to expand ▾</span>
-  </button>
-  <div class="cov-body" id="mapbody">
-    <p style="font-size:12px;color:var(--hint);margin:10px 0 0">Every screen, grouped by section. Tap a section to fold it open, then tap a screen to load it in the phone above.</p>
-    <div class="mapgrid" id="mapgrid"></div>
   </div>
 </section>
 
@@ -1950,7 +1963,7 @@ var SCEN = {
 /* ---- Task 3 manual skin map (skin <-> team id) ---- */
 var SKIN_TEAM={league:null,panthers:"carolina-panthers",dolphins:"miami-dolphins",patriots:"new-england-patriots",eagles:"philadelphia-eagles",niners:"san-francisco-49ers"};
 var SKIN_LIST=[
-  ["league","Neutral League","NFL","linear-gradient(135deg,#1C222B,#0B0E12)"],
+  ["league","NFL","NFL","linear-gradient(135deg,#1C222B,#0B0E12)"],
   ["panthers","Panthers","CAR","#0085CA"],
   ["patriots","Patriots","NE","#C60C30"],
   ["eagles","Eagles","PHI","#006B75"],
@@ -1980,6 +1993,13 @@ function setManualSkin(skin){
 
 /* ---- Scenario hub (Screen 0) ---- */
 function scenFind(k,id){ var a=SCEN[k].scenarios,i; for(i=0;i<a.length;i++){ if(a[i].id===id) return a[i]; } return null; }
+/* split a best-for / target-users string into a clean bullet list (layer uses ' · ', scenario uses '; ' or ', ') */
+function bulletList(str){
+  var parts = str.indexOf(' · ')>=0 ? str.split(' · ')
+            : str.indexOf('; ')>=0 ? str.split('; ')
+            : str.split(', ');
+  return '<ul class="fbul">'+parts.map(function(p){ return '<li>'+p.replace(/\s*\.\s*$/,'').trim()+'</li>'; }).join('')+'</ul>';
+}
 function renderScenarioHub(){
   var hub=document.getElementById("scenhub"); if(!hub) return;
   var head='<div class="scenhub-head"><div>'+
@@ -2006,8 +2026,10 @@ function renderScenarioHub(){
         '</div>'+
         '<div class="lc-fields">'+
           '<div class="lc-field"><div class="fl">Core idea</div><div class="fv" id="f-'+k+'-core">'+L.core+'</div></div>'+
-          '<div class="lc-field"><div class="fl">Best for</div><div class="fv" id="f-'+k+'-best">'+L.best+'</div></div>'+
-          '<div class="lc-field"><div class="fl">Target users</div><div class="fv" id="f-'+k+'-target">'+L.target+'</div></div>'+
+          '<div class="lc-field2">'+
+            '<div class="lc-field"><div class="fl">Best for</div><div class="fv" id="f-'+k+'-best">'+bulletList(L.best)+'</div></div>'+
+            '<div class="lc-field"><div class="fl">Target users</div><div class="fv" id="f-'+k+'-target">'+bulletList(L.target)+'</div></div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
     '</div>';
@@ -2017,15 +2039,15 @@ function renderScenarioHub(){
 function scenHover(k,id){
   var s=scenFind(k,id); if(!s) return;
   var c=document.getElementById("f-"+k+"-core"); if(c) c.textContent=s.core;
-  var b=document.getElementById("f-"+k+"-best"); if(b) b.textContent=s.best;
-  var t=document.getElementById("f-"+k+"-target"); if(t) t.textContent=s.target;
+  var b=document.getElementById("f-"+k+"-best"); if(b) b.innerHTML=bulletList(s.best);
+  var t=document.getElementById("f-"+k+"-target"); if(t) t.innerHTML=bulletList(s.target);
   var n=document.getElementById("f-"+k+"-name"); if(n) n.textContent="Scenario "+s.n+" · "+s.label;
 }
 function scenReset(k){
   var L=SCEN[k];
   var c=document.getElementById("f-"+k+"-core"); if(c) c.textContent=L.core;
-  var b=document.getElementById("f-"+k+"-best"); if(b) b.textContent=L.best;
-  var t=document.getElementById("f-"+k+"-target"); if(t) t.textContent=L.target;
+  var b=document.getElementById("f-"+k+"-best"); if(b) b.innerHTML=bulletList(L.best);
+  var t=document.getElementById("f-"+k+"-target"); if(t) t.innerHTML=bulletList(L.target);
   var n=document.getElementById("f-"+k+"-name"); if(n) n.textContent="Scenarios in this layer · hover to preview";
 }
 function launchScenario(k,id){
