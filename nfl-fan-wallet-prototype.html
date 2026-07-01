@@ -159,6 +159,33 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 @keyframes flash{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
 .bignum{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:.02em}
 
+/* ---- Rewards hub · Raffle dashboard (horizontal deck + entry list + dark voucher) ---- */
+.rhub-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 2px 2px}
+.rhub-h b{font-size:16px} .rhub-h .lk{font-size:12px;color:var(--accent2);font-weight:800;cursor:pointer}
+/* horizontal deck: one card centred/readable, neighbours peek behind (scroll-snap, no libs) */
+.hdeck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin:10px -20px 2px;padding:6px 20px 16px;scrollbar-width:none}
+.hdeck::-webkit-scrollbar{display:none}
+.rcard{flex:0 0 80%;scroll-snap-align:center;background:var(--surf);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden;cursor:pointer;box-shadow:var(--sh2);transition:.15s}
+.rcard:hover{border-color:var(--accent)}
+.rcard .rimg{height:120px;background:linear-gradient(150deg,var(--grad1),var(--grad2));display:flex;align-items:center;justify-content:center;position:relative}
+.rcard .rimg .gi{width:42px;height:42px;color:#fff;opacity:.92;display:block}
+.rcard .rimg .rcost{position:absolute;top:10px;right:10px}
+.rcard .rbody{padding:13px 15px}
+.rcard .rbody .rt{font-weight:800;font-size:15px;line-height:1.2}
+.rcard .rbody .rd{font-size:12px;color:var(--muted);margin-top:4px}
+/* submitted-entry list rows */
+.entrycard{display:flex;gap:12px;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:12px;margin:10px 0}
+.entrycard.win{border-color:var(--accent);background:linear-gradient(160deg,var(--surf2),var(--surf))}
+.entrycard.lost{opacity:.5}
+.entrycard .eimg{width:52px;height:52px;border-radius:12px;flex:0 0 auto;background:linear-gradient(150deg,var(--grad1),var(--grad2));display:flex;align-items:center;justify-content:center}
+.entrycard .eimg span{width:24px;height:24px;color:#fff}
+.entrycard .egr{flex:1;min-width:0}
+.entrycard .egr .et{font-weight:700;font-size:14px}
+.entrycard .egr .ed{font-size:12px;color:var(--muted);margin-top:2px}
+/* reward voucher (Panthers-case QR layout, dark-mode) */
+.voucher{background:var(--surf);border:1px solid var(--line);border-radius:var(--r3);padding:18px 16px;text-align:center;margin:14px 0}
+.voucher .vcode{font-family:var(--display);letter-spacing:.14em;font-size:16px;margin-top:8px}
+
 /* sticky CTA footer — pinned to the bottom of the phone, outside the scrolling .screen */
 .ctafooter{flex:0 0 auto;padding:14px 20px 18px;border-top:1px solid var(--line);background:var(--bg)}
 
@@ -228,6 +255,20 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
 .cov-col li small{color:var(--hint)}
 .legendrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--hint)}
 .legendrow span{display:flex;align-items:center;gap:6px}
+
+/* clickable prototype map (second foldable block, below coverage) */
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px;margin-top:12px}
+.map-sec{border:1px solid var(--rule);border-radius:var(--r1);overflow:hidden;background:var(--paper);align-self:start}
+.map-sec-tog{width:100%;text-align:left;background:var(--studio);border:none;padding:10px 14px;font-weight:800;font-size:12.5px;
+  cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--ink)}
+.map-sec-tog .mn{font-size:10px;color:var(--hint);font-weight:700;font-variant-numeric:tabular-nums;margin-left:8px}
+.map-sec-body{display:none;padding:4px 10px 8px}
+.map-sec-body.open{display:block}
+.map-link{display:block;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid var(--rule);
+  padding:8px 6px;font-size:12.5px;color:var(--ink2);cursor:pointer;font-weight:600;font-variant-numeric:tabular-nums}
+.map-link:last-child{border-bottom:none}
+.map-link:hover{color:var(--ink);background:var(--studio)}
+.map-link.cur{color:var(--ink);font-weight:800;background:var(--story)}
 
 /* ============================ TASK 3 — MANUAL SKIN TOGGLE ============================ */
 .skintoggle{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:2px 0 8px}
@@ -326,6 +367,16 @@ body{background:linear-gradient(180deg,var(--studio),var(--studio2));color:var(-
   </div>
 </section>
 
+<section class="coverage">
+  <button class="cov-toggle" onclick="document.getElementById('mapbody').classList.toggle('open')">
+    Clickable Prototype Map <span style="color:var(--hint);font-weight:700;font-size:12px">tap to expand ▾</span>
+  </button>
+  <div class="cov-body" id="mapbody">
+    <p style="font-size:12px;color:var(--hint);margin:10px 0 0">Every screen, grouped by section. Tap a section to fold it open, then tap a screen to load it in the phone above.</p>
+    <div class="mapgrid" id="mapgrid"></div>
+  </div>
+</section>
+
 <script>
 /* ====================================================================== */
 /*  GLOBAL STATE  (hardcoded mock data — §2 data model)                   */
@@ -341,6 +392,8 @@ var state = {
   raffleEntries:1,
   ticketMode:null,
   vote:null,
+  // referral onboarding (invited-via-referral edge state on splash 3.1)
+  referral:{ from:"Marcus" },
   // acquisition / onboarding (Task 1)
   acqTeam:"carolina-panthers", acqScenario:"A1", pack:25,
   // scenario selector + manual skin (Task 2 / Task 3)
@@ -410,7 +463,7 @@ function head(title, opts){
 function btn(label, on, kind){ return '<button class="btn '+(kind||'')+'" onclick="'+on+'">'+label+'</button>'; }
 function tabbar(active){
   /* x = [activeKey, label, icon, routeTarget] — Home tab anchors to the points dashboard */
-  var t=[['home','Home',I.home,'dashboard'],['quests','Quests',I.bolt,'quests'],['raffle','Rewards',I.gift,'raffle'],['manage','Manage',I.slid,'manage'],['activity','Activity',I.list,'activity']];
+  var t=[['home','Home',I.home,'dashboard'],['quests','Quests',I.bolt,'quests'],['raffle','Rewards',I.gift,'rewardsHub'],['manage','Manage',I.slid,'manage'],['activity','Activity',I.list,'activity']];
   return '<div class="tabbar">'+t.map(function(x){
     return '<div class="tab '+(x[0]===active?'on':'')+'" onclick="go(\''+x[3]+'\')">'+x[2]+'<span>'+x[1]+'</span></div>';
   }).join('')+'</div>';
@@ -445,7 +498,14 @@ S.splash = {
   variants:[["Returning · valid session","go('signin')"],["Invited via referral","ev('refbanner')"],["Offline launch","ev('offline')"]],
   bodyHead:function(){ return ''; },
   body:function(){
-    return '<div style="text-align:center;padding-top:90px">'+
+    var ref=state.e.refbanner, t=TEAMS[currentTeamId()]||TEAMS["carolina-panthers"], nick=t.name.split(' ').pop();
+    /* Task 1.5 — invited-via-referral state now renders on-screen; bracketed vars bind to live team state */
+    var refBanner = ref ? '<div class="card tint" style="border-color:var(--accent2);text-align:left;margin:2px 0 4px">'+
+      '<div class="row" style="align-items:flex-start;gap:10px">'+
+      '<div class="teamsq" style="background:'+t.c+';margin-top:2px">'+t.abbr+'</div>'+
+      '<div class="small" style="line-height:1.5;flex:1"><b>'+state.referral.from+'</b> invited you to <b>'+t.name+'</b> token — join and you both get <b>+5 '+nick+' tokens</b></div>'+
+      '</div></div>' : '';
+    return refBanner+'<div style="text-align:center;padding-top:'+(ref?'24px':'90px')+'">'+
       '<div class="medallion">$1</div>'+
       '<div class="h1" style="font-size:34px;margin-top:18px">NFL<br>WALLET</div>'+
       '<p class="p" style="max-width:240px;margin:10px auto 30px">Buy a token. Pledge to your team. Earn points all season.</p>'+
@@ -660,37 +720,9 @@ S.rewardPurchase = {
   },
   noHead:true
 };
-S.rewardUnlock = {
-  flow:"acquisition", phase:"Payoff · Reward", step:"00 · Reward Unlock / Voucher", id:"3.43",
-  title:"Reward unlocked", skinTag:"Team",
-  story:"As a fan, I just unlocked my reward and want a scannable voucher, so I can redeem it at the stadium.",
-  ac:["Celebratory unlock confirms the reward with a single-use, scannable voucher and expiry.","Copy reassures that tokens stay in the wallet and the reward is single-use.","Primary action shows the QR; secondary returns to the funded wallet."],
-  eng:"Reward marked unlocked; voucher dedupe per wallet (not per scan); offline scans queue and reconcile.",
-  ctas:["Show QR at any participating stand","Back to wallet → Funded wallet"],
-  prev:"3.42 Purchase", next:"3.47 Funded wallet",
-  variants:[["Already redeemed","ev('rwClaimed')"],["Reward expired","ev('rwExpired')"],["Age-gated (beer) check","acqAgeGate()"],["Offline scanner","toast('Saved — will validate at the stand')"]],
-  body:function(){
-    var t=acqT(), r=state.reward;
-    var redeemed=state.e.rwClaimed, expired=state.e.rwExpired;
-    return '<div class="screen" style="padding-top:0;text-align:center">'+
-    '<div style="padding-top:18px"></div>'+
-    '<div class="medallion" style="background:radial-gradient(circle at 35% 30%,#52d18a,#1F9D55)">✓</div>'+
-    '<div class="h1" style="margin-top:14px">Reward<br>unlocked</div>'+
-    '<p class="p" style="max-width:250px;margin:8px auto 0">'+r.name+' · added to your '+t.abbr+' wallet.</p>'+
-    '<div class="card" style="text-align:left">'+
-      '<div class="row"><b>'+r.name+'</b>'+pill(expired?'Expired':(redeemed?'Redeemed':'Active'),expired?'warn':(redeemed?'pend':'ok'))+'</div>'+
-      '<div class="small muted" style="margin-top:4px">'+r.window+' · Single-use</div>'+
-      (redeemed?'<p class="p" style="text-align:center">This voucher has already been used.</p>':(expired?'<p class="p" style="text-align:center">This voucher is no longer valid.</p>':qrBox()))+
-      '<div class="small muted" style="text-align:center">'+((redeemed||expired)?'':'Show this code at any participating stand')+'</div>'+
-    '</div>'+
-    '<div class="card" style="background:rgba(255,255,255,.04)"><div class="small">Your tokens stay in your wallet and keep earning '+t.abbr+' points.</div></div>'+
-    btn('Back to wallet',"acqHandoff()")+
-    '<div style="height:10px"></div>'+
-    btn('How redemption works',"acqHow()","ghost")+
-    '</div>';
-  },
-  noHead:true
-};
+/* 3.43 reward payoff was a single voucher screen. Per the Reward Flow Overhaul it is
+   replaced by a 2-step flow (S.rewardIn "You're in" → S.rewardRedeem QR), which — together
+   with the reward-claimed voucher — now lives in the REWARDS section below. */
 S.funded = {
   flow:"acquisition", phase:"Payoff · Wallet", step:"00 · Funded Team Wallet", id:"3.47",
   title:"Team wallet", skinTag:"Team", dynamicSkin:true,
@@ -716,8 +748,8 @@ S.funded = {
       '<div class="small" style="opacity:.92;margin-top:6px">'+(state.e.rwClaimed?state.reward.name+' redeemed ✓ · new drops all game long':state.reward.name+' · scan at any stand before the final whistle')+'</div>'+
       '<div style="height:14px"></div>'+
       (state.e.rwClaimed
-        ? '<div style="text-align:center">'+pill('Claimed','pend')+'</div>'
-        : '<button class="btn" style="background:#fff;color:var(--accent);font-weight:800" onclick="toast(\'Reward ready — show this at the stand\')">Claim my reward now</button>')+
+        ? '<div style="text-align:center"><button class="btn" style="background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.4)" onclick="go(\'rewardClaimed\')">Show my reward code</button></div>'
+        : '<button class="btn" style="background:#fff;color:var(--accent);font-weight:800" onclick="state.e.rwClaimed=true;go(\'rewardClaimed\')">Claim my reward now</button>')+
     '</div>')+
     '<div class="card" style="padding:6px 14px">'+
     [['Buy more tokens','Top up your wallet',"go('buy')",I.bolt],
@@ -1220,6 +1252,218 @@ S.referral = {
   tab:"raffle", noHead:true
 };
 
+/* ---------- REWARDS · Task 1 additions ---------- */
+/* dark-mode Panthers-case QR voucher — reused by reward redemption (3.43b) + reward claimed (3.47a) */
+function rewardVoucher(opts){
+  opts=opts||{}; var t=acqT(), r=state.reward;
+  return '<div class="voucher">'+
+    '<b style="font-size:16px">'+r.name+'</b>'+
+    '<div class="small muted" style="margin-top:2px">'+t.abbr+' reward · '+(opts.sub||'show this at any participating stand')+'</div>'+
+    qrBox()+
+    '<div class="vcode tnum">8463 1863 3565 3890</div>'+
+    '<div class="small muted" style="margin-top:6px">Single-use · '+r.window+'</div>'+
+  '</div>';
+}
+
+/* 3.30 — Main Rewards screen: three reward channels (raffles / tickets / voting-locked) */
+S.rewardsHub = {
+  flow:"rewards", phase:"Engagement", step:"—  · Rewards Hub", id:"3.30",
+  title:"Rewards", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a pledged fan, I want one place for every way my points pay off, so I can jump into raffles, tickets or voting.",
+  ac:["Three reward channels are surfaced: Raffles, Ticket purchasing and Voting.","Raffles opens the raffle dashboard; ticket purchasing opens Tickets (3.26).","Voting shows as locked until the fan reaches Silver tier."],
+  eng:"Rewards-tab landing. Raffles → raffleDashboard, Ticket purchasing → tickets, Voting locked below Silver.",
+  ctas:["Raffles → Raffle dashboard","Ticket purchasing → Tickets","Voting (locked < Silver)"],
+  prev:"3.19 Dashboard", next:"3.30a / 3.26 / 3.27",
+  variants:[],
+  body:function(){
+    var canVote = state.points.voting && !state.e.voteLocked;
+    function sec(icon,title,copy,onclick,locked,badge){
+      return '<div class="card'+(locked?' locked':' tint')+'" '+(locked?'':'onclick="'+onclick+'" ')+'style="cursor:'+(locked?'default':'pointer')+'">'+
+        '<div class="row" style="align-items:flex-start;gap:12px">'+
+          '<div class="ic" style="flex:0 0 auto">'+icon+'</div>'+
+          '<div style="flex:1;min-width:0"><div class="row"><b style="font-size:16px">'+title+'</b>'+(badge||'')+'</div>'+
+          '<div class="small muted" style="margin-top:4px">'+copy+'</div></div>'+
+          (locked?'<span style="font-size:16px">🔒</span>':I.chev)+
+        '</div></div>';
+    }
+    return head('Rewards',{team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<p class="p">Spend the points you earn — enter raffles, grab tickets, or shape the team.</p>'+
+    sec(I.gift,'Raffles','Enter using points. Winners are drawn lottery-style for team experiences and signed merch.',"go('raffleDashboard')",false,'')+
+    sec(I.gift,'Ticket purchasing','Buy with cash or redeem with points — like using airline miles for a seat.',"go('tickets')",false,'')+
+    sec(I.star,'Voting','Eligible at Silver tier and above — vote on new jersey and logo designs.',"",!canVote,pill(canVote?'Open':'Silver',canVote?'ok':'pend'))+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* 3.30a — Raffle dashboard: horizontal deck of open raffles + ranked list of submitted entries */
+S.raffleDashboard = {
+  flow:"rewards", phase:"Engagement", step:"—  · Raffle Dashboard", id:"3.30a",
+  title:"Raffles", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I want to browse open raffles and track my entries, so I know what I can win and what I've already entered.",
+  ac:["Ongoing raffles sit in a horizontal deck — one card centred and readable, neighbours peeking.","Each raffle card shows a prize image, title, draw date and entry cost.","Submitted entries sort unclaimed wins first (Claim CTA), then pending, then claimed, then lost (greyed)."],
+  eng:"Deck = CSS scroll-snap (no libs). Entry list ranked: won-unclaimed → pending → won-claimed → lost.",
+  ctas:["Tap a raffle → Enter (3.25)","Claim wins! → claim flow"],
+  prev:"3.30 Rewards hub", next:"3.25 Raffle entry",
+  variants:[],
+  body:function(){
+    var open=[
+      {t:'Signed game jersey',d:'Draws Sep 22, 2026',c:'250 pts'},
+      {t:'2 sideline passes',d:'Draws Sep 29, 2026',c:'1,000 pts'},
+      {t:'Suite for four',d:'Draws Oct 6, 2026',c:'2,500 pts'},
+      {t:'$100 team store credit',d:'Draws Oct 13, 2026',c:'500 pts'}
+    ];
+    var deck='<div class="hdeck">'+open.map(function(r){
+      return '<div class="rcard" onclick="go(\'raffle\')">'+
+        '<div class="rimg"><span class="gi">'+I.gift+'</span><span class="rcost">'+pill(r.c,'gold')+'</span></div>'+
+        '<div class="rbody"><div class="rt">'+r.t+'</div><div class="rd">'+r.d+'</div></div></div>';
+    }).join('')+'</div>';
+    // submitted entries — ranked: newest unclaimed win → pending → claimed wins → lost
+    var entries=[
+      {t:'Signed game jersey',n:3,d:'Drawn Sep 22, 2026',won:true,claimed:false,ts:6},
+      {t:'Club-level upgrade',n:1,d:'Drawn Sep 15, 2026',won:true,claimed:false,ts:5},
+      {t:'2 sideline passes',n:2,d:'Draws Sep 29, 2026',pending:true,ts:4},
+      {t:'$100 team store credit',n:1,d:'Draws Oct 6, 2026',pending:true,ts:3},
+      {t:'Signed mini-helmet',n:2,d:'Drawn Sep 8, 2026',won:true,claimed:true,ts:2},
+      {t:'Playoff ticket lottery',n:5,d:'Drawn Sep 1, 2026',lost:true,ts:1}
+    ];
+    function rank(e){ if(e.won&&!e.claimed)return 0; if(e.pending)return 1; if(e.won&&e.claimed)return 2; return 3; }
+    entries.sort(function(a,b){ return rank(a)-rank(b) || b.ts-a.ts; });
+    var topWinTaken=false;
+    var list=entries.map(function(e){
+      var cls=(e.won&&!e.claimed)?'win':(e.lost?'lost':'');
+      var badge=(e.won&&!e.claimed)?pill('Won','ok'):e.pending?pill('Pending','pend'):e.won?pill('Claimed','gold'):pill('Not selected','warn');
+      var cta='';
+      if(e.won&&!e.claimed){
+        if(!topWinTaken){ topWinTaken=true; cta='<button class="btn sm" style="width:auto;margin-top:8px" onclick="toast(\'Prize claim started\')">Claim wins!</button>'; }
+        else { cta='<button class="btn soft sm" style="width:auto;margin-top:8px" onclick="toast(\'Prize claim started\')">Claim</button>'; }
+      }
+      return '<div class="entrycard '+cls+'"><div class="eimg"><span>'+I.gift+'</span></div>'+
+        '<div class="egr"><div class="et">'+e.t+'</div><div class="ed">'+e.n+' '+(e.n===1?'entry':'entries')+' · '+e.d+'</div>'+cta+'</div>'+badge+'</div>';
+    }).join('');
+    return head('Raffles',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<div class="rhub-h"><b>Ongoing raffles</b><span class="lk" onclick="go(\'raffle\')">Enter →</span></div>'+
+    '<div class="small muted" style="margin:0 2px">Swipe the deck — enter with points, winners drawn lottery-style.</div>'+
+    deck+
+    '<div class="rhub-h"><b>My entries</b></div>'+
+    list+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* 3.25a — Raffle confirmation: transitional success after points are submitted on 3.25 */
+S.raffleSubmitted = {
+  flow:"rewards", phase:"Engagement", step:"—  · Raffle Confirmation", id:"3.25a",
+  title:"Entry submitted", skinTag:"Panthers", dynamicSkin:true,
+  story:"As a fan, I just spent points on a raffle and want instant confirmation, so I trust the entry landed.",
+  ac:["Shown immediately after points are submitted on the raffle entry screen (3.25).","Confirms the entry was submitted with the entry count.","Primary action returns the fan to the main Rewards screen."],
+  eng:"Transitional confirmation after raffleConfirm() deducts points; returns to rewardsHub.",
+  ctas:["Back to Rewards → Rewards hub","View my entries → Raffle dashboard"],
+  prev:"3.25 Raffle entry", next:"3.30 Rewards hub",
+  variants:[],
+  body:function(){
+    var n=state.raffleEntries;
+    return '<div class="screen" style="padding-top:0;text-align:center">'+
+    '<div style="padding-top:60px"></div>'+
+    '<div class="medallion" style="background:radial-gradient(circle at 35% 30%,#52d18a,#1F9D55)">✓</div>'+
+    '<div class="h1" style="margin-top:16px">Entry<br>submitted</div>'+
+    '<p class="p" style="max-width:250px;margin:8px auto 0">Your '+n+' '+(n===1?'entry is':'entries are')+' in for the draw. We’ll let you know if you win.</p>'+
+    '<div class="card" style="text-align:left"><div class="row"><span class="muted">Entries</span><b>'+n+'</b></div>'+
+    '<div class="row" style="margin-top:8px"><span class="muted">Status</span>'+pill('Pending draw','pend')+'</div></div>'+
+    btn('Back to Rewards',"go('rewardsHub')")+
+    '<div style="height:10px"></div>'+
+    btn('View my entries',"go('raffleDashboard')","ghost")+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* 3.43 — Reward payoff step 1 of 2 ("You're in"): points balance + tier + welcoming CTA */
+S.rewardIn = {
+  flow:"rewards", phase:"Payoff · Reward", step:"—  · Reward Unlock — You're In", id:"3.43",
+  title:"You're in", skinTag:"Team", dynamicSkin:true,
+  story:"As a fan who just funded a wallet, I want a warm welcome confirming my tokens and tier, so unlocking the reward feels earned.",
+  ac:["Step 1 of the reward payoff: confirms the fan is in, with token balance and tier.","Shows points balance and progress toward the next tier.","A single welcoming button continues to the reward redemption QR."],
+  eng:"Replaces the single 3.43 voucher screen (step 1 of 2). Continue → rewardRedeem. Bottom menu bar shown.",
+  ctas:["View my reward → Reward redemption (QR)"],
+  prev:"3.42 Purchase", next:"3.43b Reward redemption",
+  variants:[],
+  body:function(){
+    var t=acqT();
+    var p=(state.points&&state.points.available!=null)?state.points:{available:1240,tier:"Bronze",next:"Silver",prog:0.62};
+    var tokens=state.pack||state.wallet.pledged||state.wallet.balance||50;
+    var pct=Math.round((p.prog||0.62)*100);
+    return '<div class="screen" style="padding-top:0">'+
+    '<div style="text-align:center;padding-top:12px">'+
+      '<div class="medallion" style="background:radial-gradient(circle at 35% 30%,#52d18a,#1F9D55)">✓</div>'+
+      '<div class="h1" style="margin-top:12px">You’re in</div>'+
+      '<p class="p" style="max-width:250px;margin:6px auto 0">Welcome to the '+t.name+'. Your reward is ready to redeem.</p>'+
+    '</div>'+
+    '<div class="card tint" style="border-color:var(--accent)">'+
+      '<div class="row"><div><div class="small muted">Your '+t.abbr+' tokens</div><div class="bignum">'+tokens+'</div></div>'+
+      '<div style="text-align:right"><div class="small muted">Points</div><div class="bignum" style="font-size:22px">'+p.available.toLocaleString()+'</div></div></div>'+
+      '<div class="row" style="margin-top:10px"><div>'+pill(p.tier+' tier','gold')+'</div><div class="small muted">'+pct+'% to '+(p.next||'Silver')+'</div></div>'+
+      '<div class="progress"><i style="width:'+pct+'%"></i></div>'+
+    '</div>'+
+    '<div class="card" style="background:rgba(255,255,255,.04)"><div class="small">Your tokens stay in your wallet and keep earning '+t.abbr+' points all season.</div></div>'+
+    btn('View my reward',"go('rewardRedeem')")+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* 3.43b — Reward payoff step 2 of 2 (Reward Redemption): scannable single-use QR */
+S.rewardRedeem = {
+  flow:"rewards", phase:"Payoff · Reward", step:"—  · Reward Redemption", id:"3.43b",
+  title:"Reward redemption", skinTag:"Team", dynamicSkin:true,
+  story:"As a fan, I want a scannable code for my unlocked reward, so staff can redeem it at the stand.",
+  ac:["Step 2 of the reward payoff: a single-use QR voucher for the unlocked reward.","Expired or already-redeemed rewards show a clear state instead of a live code.","Bottom menu bar is shown; the fan can return to the wallet at any time."],
+  eng:"Renders rewardVoucher() (dark Panthers-case QR). Staff scan → mark claimed → funded wallet.",
+  ctas:["Staff: scan to redeem → Funded wallet","Back to wallet → Funded wallet"],
+  prev:"3.43 You're in", next:"3.47 Funded wallet",
+  variants:[["Already redeemed","ev('rwClaimed')"],["Reward expired","ev('rwExpired')"],["Age-gated (beer) check","acqAgeGate()"]],
+  body:function(){
+    var t=acqT(), r=state.reward, redeemed=state.e.rwClaimed, expired=state.e.rwExpired;
+    var voucher = expired
+      ? '<div class="voucher"><b style="font-size:16px">'+r.name+'</b><p class="p">This voucher is no longer valid.</p>'+pill('Expired','warn')+'</div>'
+      : redeemed
+      ? '<div class="voucher"><b style="font-size:16px">'+r.name+'</b><p class="p">This voucher has already been used.</p>'+pill('Redeemed','pend')+'</div>'
+      : rewardVoucher();
+    return head('Reward redemption',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0">'+
+    '<p class="p">'+r.name+' · single-use for your '+t.abbr+' wallet.</p>'+
+    voucher+
+    ((redeemed||expired)?'' : btn('Staff: scan to redeem',"state.e.rwClaimed=true;toast('Reward redeemed');go('funded')"))+
+    ((redeemed||expired)?'' : '<div style="height:10px"></div>')+
+    btn('Back to wallet',"acqHandoff()","ghost")+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
+/* 3.47a — Reward-claimed state, nested under the team wallet (3.47): re-openable QR voucher */
+S.rewardClaimed = {
+  flow:"rewards", phase:"Payoff · Reward", step:"—  · Reward Claimed", id:"3.47a",
+  title:"Reward claimed", skinTag:"Team", dynamicSkin:true,
+  story:"As a fan in my team wallet, I want to re-open my claimed reward code, so I can show it at the stand.",
+  ac:["Nested under the team wallet (3.47) for the reward-claimed state.","Contains the single-use QR voucher, ported from the Panthers token prototype in dark mode.","Bottom menu bar is shown; the fan can return to the wallet."],
+  eng:"Reached from funded (3.47) claim action; reuses rewardVoucher(). Housed in rewards state logic.",
+  ctas:["Back to wallet → Funded wallet"],
+  prev:"3.47 Funded wallet", next:"3.47 Funded wallet",
+  variants:[],
+  body:function(){
+    var t=acqT();
+    return head('Reward claimed',{back:true,team:currentTeamId()})+'<div class="screen" style="padding-top:0;text-align:center">'+
+    '<div>'+pill('✓ Claimed','ok')+'</div>'+
+    '<div class="h1" style="margin-top:8px">Show this at<br>the stand</div>'+
+    '<p class="p" style="max-width:250px;margin:6px auto 0">Your '+t.name+' reward is claimed. Staff scan this single-use code.</p>'+
+    rewardVoucher({sub:'staff scan to redeem'})+
+    btn('Back to wallet',"go('funded')")+
+    '</div>';
+  },
+  tab:"raffle", noHead:true
+};
+
 /* ---------- BOOST ---------- */
 S.boost = {
   flow:"boost", phase:"Loyalty", step:"08 · At-Game Boost", id:"3.21",
@@ -1290,7 +1534,7 @@ var FLOWS = [
   ["pledge","Pledge","06","pledge"],
   ["points","Points","07","dashboard"],
   ["quests","Quests","09","quests"],
-  ["rewards","Rewards","—","raffle"],
+  ["rewards","Rewards","—","rewardsHub"],
   ["boost","Boost","08","boost"],
   ["manage","Manage","10","manage"]
 ];
@@ -1302,8 +1546,9 @@ function renderRail(){
 }
 function goFlow(first){
   // ensure pre-reqs so later flows render with sane data
-  if(["rewardLanding","loginGate","rewardPurchase","rewardUnlock","funded"].indexOf(first)>=0){ if(!state.acqTeam) state.acqTeam="carolina-panthers"; state.skin=teamSkin(state.acqTeam); }
-  if(["dashboard","quests","raffle","tickets","voting","referral","manage","boost"].indexOf(first)>=0 && !state.primaryTeam){ seedPledged(); }
+  if(["rewardLanding","loginGate","rewardPurchase","funded"].indexOf(first)>=0){ if(!state.acqTeam) state.acqTeam="carolina-panthers"; state.skin=teamSkin(state.acqTeam); }
+  // loyalty + rewards screens (incl. Task 1 hub/dashboard/confirmation and the team-skinned reward payoff) seed a pledged fan
+  if(["dashboard","quests","raffle","tickets","voting","referral","manage","boost","rewardsHub","raffleDashboard","raffleSubmitted","rewardIn","rewardRedeem","rewardClaimed"].indexOf(first)>=0 && !state.primaryTeam){ seedPledged(); }
   go(first);
 }
 
@@ -1375,9 +1620,10 @@ function panelHTML(sc){
 
 /* happy-path ordering for the panel Next button */
 var SPINE = ["splash","profile","otp","provisioning","home","buy","review","success","location","teamDetected","pledge","skinUnlock","dashboard","quests","questDetail","raffle","tickets","voting","boost","manage"];
-var ACQ_SPINE=["rewardLanding","loginGate","rewardPurchase","rewardUnlock","funded"];
+var ACQ_SPINE=["rewardLanding","loginGate","rewardPurchase","rewardIn","rewardRedeem","funded"];
 /* logical predecessor for screens that sit off the two main spines */
-var SPINE_PREV={signin:"splash",manualPicker:"location",waitlist:"manualPicker",tier:"dashboard",activity:"dashboard",referral:"dashboard"};
+var SPINE_PREV={signin:"splash",manualPicker:"location",waitlist:"manualPicker",tier:"dashboard",activity:"dashboard",referral:"dashboard",
+  rewardsHub:"dashboard",raffleDashboard:"rewardsHub",raffleSubmitted:"raffle",rewardClaimed:"funded"};
 function happyPrev(id){
   var i=SPINE.indexOf(id);
   if(i>0) return SPINE[i-1];
@@ -1557,7 +1803,7 @@ function questOpen(id){ if(id==='q3'){ go('questDetail'); } else if(id==='q1'){ 
 function raffleN(d){ state.raffleEntries=Math.max(1,Math.min(10,state.raffleEntries+d)); render(); }
 function raffleConfirm(total){
   if(state.points.available<total){ toast('You need more points','warn'); return; }
-  state.points.available-=total; toast('Raffle entered'); render();
+  state.points.available-=total; toast('Raffle entered'); go('raffleSubmitted');
 }
 function voteSel(o){ state.vote=o; render(); }
 function voteConfirm(){ if(!state.vote){ toast('Choose an option to vote','warn'); return; } toast('Vote submitted'); go('dashboard'); }
@@ -1601,7 +1847,7 @@ function acqConfirmPay(){
   closeOverlay();
   state.wallet.balance += state.pack; state.wallet.unpledged = 0; state.wallet.pledged = (state.wallet.pledged||0)+state.pack;
   toast(state.e.boostPair?'Paid — boosted points earning':'Payment confirmed');
-  go('rewardUnlock');
+  go('rewardIn');
 }
 function acqAgeGate(){ openModal('<b>Age verification</b><p class="small muted">This reward is age-restricted. Confirm you’re 21+ to redeem, or pick a non-alcohol alternative.</p><div class="navrow"><button onclick="closeOverlay();toast(\'Showing alternatives\')">Non-alcohol option</button><button class="pri" onclick="closeOverlay();toast(\'Verified 21+\')">I’m 21+</button></div>'); }
 function acqHandoff(){
@@ -1641,7 +1887,7 @@ var SCEN = {
         core:"Fan is at an eligible game/event; buying and pledging during the active window earns boosted points.",
         best:"Urgency, repeat purchases, in-stadium conversion.",
         target:"Stadium fans, returning users, high-intent game-day users."},
-      {id:"s3",n:"3",label:"Reward redemption / voucher claim",route:"rewardUnlock",team:true,
+      {id:"s3",n:"3",label:"Reward redemption / voucher claim",route:"rewardIn",team:true,
         core:"Fan completes purchase/activation and receives a scannable reward, e.g. beer, merch discount, food voucher, sweepstakes entry.",
         best:"Immediate payoff and trust-building.",
         target:"Reward-motivated fans, first-time users."},
@@ -1831,10 +2077,36 @@ function renderCov(){
     col('Needs input','d-need',COV.need)+col('Excluded','d-excl',COV.excl);
 }
 
+/* ---- clickable prototype map (second foldable block) — every screen, grouped by flow ---- */
+function renderMap(){
+  var el=document.getElementById('mapgrid'); if(!el) return;
+  var labels={}, order=FLOWS.map(function(f){ labels[f[0]]=f[1]; return f[0]; });
+  var groups={};
+  Object.keys(S).forEach(function(k){
+    var sc=S[k]; if(!sc || !sc.step) return; // skip router-only markers (e.g. scenario0)
+    (groups[sc.flow]=groups[sc.flow]||[]).push(k);
+  });
+  el.innerHTML = order.filter(function(fl){ return groups[fl]; }).map(function(fl){
+    var items=groups[fl].map(function(k){
+      return '<button class="map-link'+(k===state.screen?' cur':'')+'" data-id="'+k+'" onclick="mapGo(\''+k+'\')">'+S[k].step+'</button>';
+    }).join('');
+    return '<div class="map-sec"><button class="map-sec-tog" onclick="this.nextElementSibling.classList.toggle(\'open\')">'+
+      (labels[fl]||fl)+'<span class="mn">'+groups[fl].length+' ▾</span></button>'+
+      '<div class="map-sec-body">'+items+'</div></div>';
+  }).join('');
+}
+/* clicking a map link renders that screen (seeding pre-reqs) and re-highlights, without collapsing folds */
+function mapGo(id){
+  goFlow(id);
+  var links=document.querySelectorAll('#mapgrid .map-link');
+  for(var i=0;i<links.length;i++){ links[i].classList.toggle('cur', links[i].getAttribute('data-id')===state.screen); }
+}
+
 /* ====================================================================== */
 /*  BOOT                                                                   */
 /* ====================================================================== */
 renderCov();
+renderMap();
 render();
 </script>
 </body>
